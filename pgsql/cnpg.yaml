@@ -22,6 +22,7 @@ spec:
     size: 20Gi
     storageClass: longhorn-pg
   managed:
+    databaseReclaimPolicy: delete
     roles:
       - name: keycloak
         ensure: present
