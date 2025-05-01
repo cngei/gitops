@@ -21,3 +21,24 @@ spec:
   storage:
     size: 20Gi
     storageClass: longhorn-pg
+  managed:
+    roles:
+      - name: keycloak
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-keycloak
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-keycloak
+spec:
+  name: keycloak
+  owner: keycloak
+  cluster:
+    name: pg-cluster
