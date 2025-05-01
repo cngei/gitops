@@ -4,7 +4,7 @@ metadata:
   name: keycloak
   namespace: auth
 spec:
-  instances: 1
+  instances: 3
   db:
     vendor: postgres
     host: pg-cluster-rw.db.svc.cluster.local
