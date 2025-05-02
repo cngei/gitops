@@ -8,7 +8,7 @@ metadata:
     "cert-manager.io/cluster-issuer": "le-cert-issuer"
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
     - kind: Rule
       match: Host(`auth.cngei.it`)
@@ -16,6 +16,8 @@ spec:
         - kind: Service
           name: keycloak
           port: 8080
+  tls:
+    secretName: kc-tls
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
@@ -25,3 +27,16 @@ spec:
   stripPrefix:
     prefixes:
       - /auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kc-cert
+  namespace: auth
+spec:
+  secretName: kc-tls
+  dnsNames:
+    - "auth.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
