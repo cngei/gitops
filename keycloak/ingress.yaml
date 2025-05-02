@@ -3,13 +3,14 @@ kind: IngressRoute
 metadata:
   name: keycloak-ingress
   namespace: auth
+  labels:
+    - "traefik.http.middlewares.test-stripprefix.stripprefix.prefixes=/auth"
 spec:
   entryPoints:
     - web
   routes:
     - kind: Rule
-      # match: Host(`auth.cngei.it`)
-      match: PathPrefix(`/`)
+      match: Host(`auth2.cngei.it`)
       services:
         - kind: Service
           name: keycloak
