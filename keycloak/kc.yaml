@@ -20,4 +20,4 @@ spec:
   http:
     httpEnabled: true
   hostname:
-    hostname: auth2.cngei.it
+    hostname: auth.cngei.it
