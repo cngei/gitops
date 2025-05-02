@@ -5,6 +5,8 @@ metadata:
   namespace: auth
 spec:
   instances: 3
+  image: paolocngei/keycloak:26.2.2-x86
+  startOptimized: false
   db:
     vendor: postgres
     host: pg-cluster-rw.db.svc.cluster.local
@@ -17,7 +19,12 @@ spec:
     passwordSecret:
       name: pg-cluster-keycloak
       key: password
+  hostname:
+    hostname: https://auth.cngei.it/auth
+  proxy:
+    headers: xforwarded
   http:
     httpEnabled: true
-  hostname:
-    hostname: auth.cngei.it
+  additionalOptions:
+    - name: http-relative-path
+      value: "auth"

@@ -3,9 +3,6 @@ kind: IngressRoute
 metadata:
   name: keycloak-ingress
   namespace: auth
-  annotations:
-    "traefik.ingress.kubernetes.io/router.middlewares": "kc-stripprefix@kubernetescrd"
-    "cert-manager.io/cluster-issuer": "le-cert-issuer"
 spec:
   entryPoints:
     - websecure
