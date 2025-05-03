@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nextcloud-helm
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: nextcloud
+    repoURL: https://nextcloud.github.io/helm/
+    targetRevision: 6.6.10
+    helm:
+      valuesObject:
+        nextcloud:
+          host: cloud.cngei.it
+        redis:
+          enabled: true
+          auth:
+            enabled: false
+          global:
+            storageClass: longhorn
+        internalDatabase:
+          enabled: false
+        externalDatabase:
+          enabled: true
+          host: pg-cluster-nextcloud.db.svc.cluster.local
+          port: 5432
+          existingSecret:
+            enabled: true
+            name: pg-cluster-nextcloud-credentials
+            usernameKey: username
+            passwordKey: password
+        persistence:
+          enabled: true
+          storageClass: longhorn
+          nextcloudData:
+            enabled: true
+            existingClaim: s3fs-cloud-claim
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: nextcloud
