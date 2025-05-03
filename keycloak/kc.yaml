@@ -5,7 +5,7 @@ metadata:
   namespace: auth
 spec:
   instances: 3
-  image: paolocngei/keycloak:26.2.2-x86
+  image: paolocngei/keycloak:26.2.2-theme
   startOptimized: false
   db:
     vendor: postgres
