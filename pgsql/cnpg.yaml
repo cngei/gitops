@@ -22,7 +22,6 @@ spec:
     size: 20Gi
     storageClass: longhorn-pg
   managed:
-    databaseReclaimPolicy: delete
     roles:
       - name: keycloak
         ensure: present
@@ -33,6 +32,15 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-keycloak
+      - name: jira
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-jira-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database

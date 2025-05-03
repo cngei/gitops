@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jira-helm
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: jira
+    repoURL: https://atlassian.github.io/data-center-helm-charts
+    targetRevision: 2.0.0
+    helm:
+      valuesObject:
+        replicaCount: 1
+        database:
+          type: postgres72
+          url: jdbc:postgresql://pg-cluster-rw.db.svc.cluster.local:5432/jira
+          driver: org.postgresql.Driver
+        volumes:
+          localHome:
+            persistentVolumeClaim:
+              create: true
+              storageClassName: longhorn-jira-local
+          sharedHome:
+            persistentVolumeClaim:
+              create: true
+              storageClassName: longhorn
+              resources:
+                requests:
+                  storage: 10Gi
+        jira:
+          clustering:
+            enabled: true
+          readinessProbe:
+            enabled: false
+          resources:
+            jvm:
+              maxHeap: "4096m"
+              minHeap: "2048m"
+              reservedCodeCache: "1024m"
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: jira

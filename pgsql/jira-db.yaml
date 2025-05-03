@@ -1,0 +1,9 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-jira
+spec:
+  name: jira
+  owner: jira
+  cluster:
+    name: pg-cluster
