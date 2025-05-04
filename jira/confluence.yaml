@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: confluence-helm
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: confluence
+    repoURL: https://atlassian.github.io/data-center-helm-charts
+    targetRevision: 2.0.0
+    helm:
+      valuesObject:
+        replicaCount: 1
+        database:
+          type: postgresql
+          url: jdbc:postgresql://pg-cluster-rw.db.svc.cluster.local:5432/confluence
+          credentials:
+            secretName: pg-cluster-confluence-credentials
+            usernameSecretKey: username
+            passwordSecretKey: password
+        volumes:
+          localHome:
+            persistentVolumeClaim:
+              create: true
+              storageClassName: longhorn-jira-local
+              resources:
+                requests:
+                  storage: 2Gi
+          sharedHome:
+            persistentVolumeClaim:
+              create: true
+              storageClassName: longhorn
+              resources:
+                requests:
+                  storage: 10Gi
+        confluence:
+          clustering:
+            enabled: true
+          readinessProbe:
+            enabled: false
+          resources:
+            jvm:
+              maxHeap: "4096m"
+              minHeap: "2048m"
+              reservedCodeCache: "1024m"
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: confluence

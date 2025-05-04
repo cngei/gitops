@@ -1,0 +1,9 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-confluence
+spec:
+  name: confluence
+  owner: confluence
+  cluster:
+    name: pg-cluster

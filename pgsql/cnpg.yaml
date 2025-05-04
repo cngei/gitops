@@ -41,6 +41,15 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-jira-credentials
+      - name: confluence
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-confluence-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
