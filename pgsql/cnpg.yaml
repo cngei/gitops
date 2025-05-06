@@ -50,6 +50,15 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-confluence-credentials
+      - name: nextcloud
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-nextcloud-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database

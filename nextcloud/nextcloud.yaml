@@ -13,8 +13,17 @@ spec:
       valuesObject:
         nextcloud:
           host: cloud.cngei.it
+          objectStore:
+            s3:
+              enabled: true
+              host: fsn1.your-objectstorage.com
+              bucket: cngeicloud
+              existingSecret: nextcloud-s3-secret
+              secretKeys:
+                accessKey: username
+                secretKey: password
         redis:
-          enabled: true
+          enabled: false
           auth:
             enabled: false
           global:
@@ -22,20 +31,19 @@ spec:
         internalDatabase:
           enabled: false
         externalDatabase:
+          type: postgresql
           enabled: true
-          host: pg-cluster-nextcloud.db.svc.cluster.local
+          host: pg-cluster-rw.db.svc.cluster.local
           port: 5432
           existingSecret:
             enabled: true
-            name: pg-cluster-nextcloud-credentials
+            secretName: pg-cluster-nextcloud-credentials
             usernameKey: username
             passwordKey: password
         persistence:
           enabled: true
           storageClass: longhorn
-          nextcloudData:
-            enabled: true
-            existingClaim: s3fs-cloud-claim
+
   destination:
     server: "https://kubernetes.default.svc"
     namespace: nextcloud
