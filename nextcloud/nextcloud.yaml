@@ -11,14 +11,19 @@ spec:
     targetRevision: 6.6.10
     helm:
       valuesObject:
+        livenessProbe:
+          enabled: false
+        readinessProbe:
+          enabled: false
         nextcloud:
-          host: cloud.cngei.it
+          host: cloud2.cngei.it
           objectStore:
             s3:
               enabled: true
               host: fsn1.your-objectstorage.com
               bucket: cngeicloud
               existingSecret: nextcloud-s3-secret
+              usePathStyle: true
               secretKeys:
                 accessKey: username
                 secretKey: password
