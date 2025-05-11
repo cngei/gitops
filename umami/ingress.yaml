@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: umami-ingress
+  namespace: umami
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`analytics.cngei.it`)
+      services:
+        - kind: Service
+          name: umami
+          port: 5000
+  tls:
+    secretName: umami-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: umami-cert
+  namespace: umami
+spec:
+  secretName: umami-tls
+  dnsNames:
+    - "analytics.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
