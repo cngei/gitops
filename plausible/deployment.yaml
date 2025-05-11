@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plausible-analytics
+  namespace: plausible
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plausible-analytics
+  template:
+    metadata:
+      labels:
+        app: plausible-analytics
+    spec:
+      containers:
+        - name: plausible-analytics
+          image: ghcr.io/plausible/community-edition:v3.0.1
+          command:
+            [
+              "sh",
+              "-c",
+              "/entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run",
+            ]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+          env:
+            - name: BASE_URL
+              value: "https://analytics.cngei.it"
+            - name: DISABLE_REGISTRATION
+              value: "true"
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: plausible-credentials
+                  key: secret
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: plausible-credentials
+                  key: postgres
+            - name: CLICKHOUSE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: plausible-credentials
+                  key: clickhouse
