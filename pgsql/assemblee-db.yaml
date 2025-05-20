@@ -1,0 +1,9 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-assemblee
+spec:
+  name: assemblee
+  owner: assemblee
+  cluster:
+    name: pg-cluster

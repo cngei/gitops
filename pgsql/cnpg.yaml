@@ -68,6 +68,15 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-umami-credentials
+      - name: assemblee
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-assemblee-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
