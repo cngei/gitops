@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: paolocngei/assemblee:latest
+          image: paolocngei/assemblee:2.0.0
           ports:
             - containerPort: 8080
           env:
