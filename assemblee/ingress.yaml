@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: assemblee-ingress
+  namespace: assemblee
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`assemblee.cngei.it`)
+      services:
+        - kind: Service
+          name: assemblee
+          port: 8080
+  tls:
+    secretName: assemblee-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: assemblee-cert
+  namespace: assemblee
+spec:
+  secretName: assemblee-tls
+  dnsNames:
+    - "assemblee.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer

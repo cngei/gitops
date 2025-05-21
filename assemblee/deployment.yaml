@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app
+  name: assemblee
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: app
+      app: assemblee
   template:
     metadata:
       labels:
-        app: app
+        app: assemblee
     spec:
       containers:
-        - name: app
+        - name: assemblee
           image: paolocngei/assemblee:2.0.0
           ports:
             - containerPort: 8080
@@ -31,4 +31,4 @@ spec:
                   name: pg-cluster-assemblee-credentials
                   key: password
             - name: REDISHOST
-              value: "redis.redis.svc.cluster.local"
+              value: "redis-master.redis.svc.cluster.local"
