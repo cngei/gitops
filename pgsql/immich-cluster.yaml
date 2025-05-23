@@ -11,16 +11,6 @@ spec:
   postgresql:
     shared_preload_libraries:
       - "vectors.so"
-  bootstrap:
-    initdb:
-      database: immich
-      postInitApplicationSQL:
-        - CREATE EXTENSION IF NOT EXISTS "vectors";
-    owner: immich
-    secret:
-      name: pg-cluster-immich-credentials
-    dataChecksums: true
-    encoding: "UTF8"
   managed:
     roles:
       - name: immich
