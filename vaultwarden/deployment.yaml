@@ -20,6 +20,19 @@ spec:
           env:
             - name: DOMAIN
               value: "https://password.cngei.it"
+            - name: SMTP_HOST
+              value: "smtp-relay.gmail.com"
+            - name: SMTP_PORT
+              value: "587"
+            - name: SMTP_FROM
+              value: "noreply@cngei.it"
+            - name: SMTP_USERNAME
+              value: "help@cngei.it"
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-smtp-password
+                  key: password
           volumeMounts:
             - name: vaultwarden-pvc
               mountPath: /data
