@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-relay
+  namespace: sc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail-relay
+  template:
+    metadata:
+      labels:
+        app: mail-relay
+    spec:
+      containers:
+        - name: mail-relay
+          image: ixdotai/smtp:v0.7.7
+          ports:
+            - containerPort: 25
+          env:
+            - name: SMARTHOST_ADDRESS
+              value: "smtp-relay.gmail.com"
+            - name: SMARTHOST_PORT
+              value: "587"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi

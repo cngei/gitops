@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc
+  namespace: sc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sc
+  template:
+    metadata:
+      labels:
+        app: sc
+    spec:
+      containers:
+        - name: sc
+          image: paolocngei/sc:0.0.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: dbString
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: dbUser
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: dbPass
+            - name: JAVA_OPTS
+              value: "--enable-preview -Xmx4G -XX:MaxDirectMemorySize=1G -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=1 -Djava.awt.headless=true"
+            - name: S3_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: s3String
+            - name: LOCAL_S3_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: localS3ConnectionString
+            - name: ACS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: acsConnectionString
+            - name: PAYPAL_BASEURL
+              value: "https://api-m.paypal.com"
+            - name: PAYPAL_CLIENTID
+              value: "AV15SWblQxZ6i9e02y7Q8Cz4TAzFa_Zph81s-aT4aIlxEP7B9aaPUMgHaY0aVdwrKaYIiM1H3Zn-Dbjt"
+            - name: PAYPAL_CURRENCY
+              value: "EUR"
+            - name: PAYPAL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: paypalSecret
+            - name: SYNC_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: syncToken
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: keycloakPassword
+            - name: KEYCLOAK_RESET_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: keycloakResetSecret
+            - name: SEED_ENABLED
+              value: "false"
+            - name: EMAIL_RELAY_HOST
+              value: "mail-relay"
+            - name: EMAIL_RELAY_PORT
+              value: "25"
+            - name: KEYCLOAK_REALM
+              value: "cngei"
+            - name: KEYCLOAK_ISSUER
+              value: "https://auth.cngei.it/auth/realms/cngei"
+            - name: SUMO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: sumologicUrl
+            - name: WEBDAV_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: sc-secrets
+                  key: webdavToken
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 4Gi
+            limits:
+              cpu: 4000m
+              memory: 6Gi
