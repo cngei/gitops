@@ -5,7 +5,7 @@ metadata:
   namespace: auth
 spec:
   instances: 3
-  image: ghcr.io/cngei/kc-theme:9ee4fea51312276262583ee9215e2263e7189e7f
+  image: ghcr.io/cngei/kc-theme:f74306fad510a9f9e23215baa49eb88da486fd55
   startOptimized: false
   db:
     vendor: postgres
