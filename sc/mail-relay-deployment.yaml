@@ -15,14 +15,16 @@ spec:
     spec:
       containers:
         - name: mail-relay
-          image: ixdotai/smtp:v0.7.7
+          image: juanluisbaptiste/postfix
           ports:
             - containerPort: 25
           env:
-            - name: SMARTHOST_ADDRESS
+            - name: SMTP_SERVER
               value: "smtp-relay.gmail.com"
-            - name: SMARTHOST_PORT
-              value: "587"
+            - name: SERVER_HOSTNAME
+              value: "api.cngei.it"
+            # - name: RELAY_NETWORKS
+            #   value: "10.0.0.0/8"
           resources:
             requests:
               cpu: 100m
