@@ -12,4 +12,4 @@ spec:
       targetPort: 25
   selector:
     app: mail-relay
-  type: LoadBalancer
+  type: ClusterIP
