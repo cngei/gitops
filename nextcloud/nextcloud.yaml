@@ -17,16 +17,24 @@ spec:
           enabled: false
         nextcloud:
           host: cloud2.cngei.it
-          objectStore:
-            s3:
-              enabled: true
-              host: fsn1.your-objectstorage.com
-              bucket: cngeicloud
-              existingSecret: nextcloud-s3-secret
-              usePathStyle: true
-              secretKeys:
-                accessKey: username
-                secretKey: password
+        persistence:
+          enabled: true
+          storageClass: longhorn
+          size: 10Gi
+          nextcloudData:
+            enabled: true
+            existingClaim: nextcloud-cifs-pvc
+            size: 3000Gi
+          # objectStore:
+          #   s3:
+          #     enabled: true
+          #     host: fsn1.your-objectstorage.com
+          #     bucket: cngeicloud
+          #     existingSecret: nextcloud-s3-secret
+          #     usePathStyle: true
+          #     secretKeys:
+          #       accessKey: username
+          #       secretKey: password
         redis:
           enabled: false
           auth:
@@ -45,9 +53,6 @@ spec:
             secretName: pg-cluster-nextcloud-credentials
             usernameKey: username
             passwordKey: password
-        persistence:
-          enabled: true
-          storageClass: longhorn
 
   destination:
     server: "https://kubernetes.default.svc"

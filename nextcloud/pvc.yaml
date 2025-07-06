@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-cifs-pv
+  namespace: nextcloud
+  annotations:
+    pv.kubernetes.io/provisioned-by: smb.csi.k8s.io
+spec:
+  capacity:
+    storage: 3000Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: "smb"
+  mountOptions:
+    - dir_mode=0770
+    - file_mode=0777
+    - vers=3.0
+  csi:
+    driver: smb.csi.k8s.io
+    readOnly: false
+    volumeHandle: nextcloud-cifs-pv
+    volumeAttributes:
+      source: "//u471849.your-storagebox.de/backup"
+      subDir: "data"
+    nodeStageSecretRef:
+      name: nextcloud-cifs-creds
+      namespace: nextcloud
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nextcloud-cifs-pvc
+  namespace: nextcloud
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 3000Gi
+  volumeName: nextcloud-cifs-pv
+  storageClassName: "smb"
