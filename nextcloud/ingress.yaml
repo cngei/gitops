@@ -8,7 +8,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`cloud2.cngei.it`)
+      match: Host(`cloud.cngei.it`)
       services:
         - kind: Service
           name: nextcloud-helm
@@ -24,7 +24,7 @@ metadata:
 spec:
   secretName: nextcloud-tls
   dnsNames:
-    - "cloud2.cngei.it"
+    - "cloud.cngei.it"
   issuerRef:
     name: le-cert-issuer
     kind: ClusterIssuer
