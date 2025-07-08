@@ -10,6 +10,8 @@ spec:
     repoURL: https://nextcloud.github.io/helm/
     targetRevision: 6.6.10
     helm:
+      image:
+        tag: 28.0.3
       valuesObject:
         livenessProbe:
           enabled: false
