@@ -25,16 +25,6 @@ spec:
             enabled: true
             existingClaim: nextcloud-cifs-pvc
             size: 3000Gi
-          # objectStore:
-          #   s3:
-          #     enabled: true
-          #     host: fsn1.your-objectstorage.com
-          #     bucket: cngeicloud
-          #     existingSecret: nextcloud-s3-secret
-          #     usePathStyle: true
-          #     secretKeys:
-          #       accessKey: username
-          #       secretKey: password
         redis:
           enabled: false
           auth:
