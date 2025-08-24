@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-dev
+  namespace: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sc-dev
+  template:
+    metadata:
+      labels:
+        app: sc-dev
+    spec:
+      containers:
+        - name: sc
+          image: ghcr.io/cngei/sc:d389fc598a8578e0709a6fc240e7f6010f10f3b7
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: dbString
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: dbUser
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: dbPass
+            - name: JAVA_OPTS
+              value: "--enable-preview -Xmx2G -XX:MaxDirectMemorySize=1G -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=1 -Djava.awt.headless=true"
+            - name: S3_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: s3String
+            - name: LOCAL_S3_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: localS3ConnectionString
+            - name: ACS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: localS3ConnectionString
+            - name: PAYPAL_BASEURL
+              value: "https://api-m.sandbox.paypal.com"
+            - name: PAYPAL_CLIENTID
+              value: "Afqy9-grPUoPD1GVf5-mJiKbt6EefqxjloH0TKxUzJCrJ5CDJEwcL-ggJzOxBCyko3wTNfX2abGbQ1Sp"
+            - name: PAYPAL_CURRENCY
+              value: "USD"
+            - name: PAYPAL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: paypalSecret
+            - name: SYNC_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: syncToken
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: keycloakPassword
+            - name: KEYCLOAK_RESET_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: keycloakResetSecret
+            - name: SEED_ENABLED
+              value: "false"
+            - name: EMAIL_RELAY_HOST
+              value: "mailcatcher"
+            - name: EMAIL_RELAY_PORT
+              value: "25"
+            - name: KEYCLOAK_REALM
+              value: "dev"
+            - name: KEYCLOAK_ISSUER
+              value: "https://auth.cngei.it/auth/realms/dev"
+            - name: SUMO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: sumologicUrl
+            - name: WEBDAV_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: sc-dev-secrets
+                  key: webdavToken
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi

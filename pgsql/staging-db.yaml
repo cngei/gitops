@@ -1,0 +1,9 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-staging
+spec:
+  name: staging
+  owner: staging
+  cluster:
+    name: pg-cluster

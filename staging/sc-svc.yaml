@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sc
+  namespace: sc
+  labels:
+    app: sc
+spec:
+  ports:
+    - name: sc-http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: sc
+  type: LoadBalancer
