@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailcatcher
+  namespace: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailcatcher
+  template:
+    metadata:
+      labels:
+        app: mailcatcher
+    spec:
+      containers:
+        - name: mailcatcher
+          image: dockage/mailcatcher:0.9.0
+          ports:
+            - containerPort: 1025
+            - containerPort: 1080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
