@@ -77,6 +77,24 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-assemblee-credentials
+      - name: staging
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-staging-credentials
+      - name: prod
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-prod-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
