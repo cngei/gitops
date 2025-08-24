@@ -97,6 +97,8 @@ spec:
                 secretKeyRef:
                   name: sc-dev-secrets
                   key: webdavToken
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: create
           resources:
             requests:
               cpu: 1000m
