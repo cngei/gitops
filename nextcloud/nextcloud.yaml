@@ -16,7 +16,7 @@ spec:
         readinessProbe:
           enabled: false
         nextcloud:
-          host: cloud2.cngei.it
+          host: cloud.cngei.it
         persistence:
           enabled: true
           storageClass: longhorn
@@ -43,7 +43,6 @@ spec:
             secretName: pg-cluster-nextcloud-credentials
             usernameKey: username
             passwordKey: password
-
   destination:
     server: "https://kubernetes.default.svc"
     namespace: nextcloud
