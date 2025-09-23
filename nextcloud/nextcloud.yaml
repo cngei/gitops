@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: nextcloud-helm
-  namespace: argocd
+  namespace: nextcloud
 spec:
   project: default
   source:
