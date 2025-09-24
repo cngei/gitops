@@ -32,7 +32,7 @@ spec:
       - name: immich
         ensure: present
         login: true
-        superuser: false
+        superuser: true
         inRoles:
           - pg_monitor
           - pg_signal_backend
