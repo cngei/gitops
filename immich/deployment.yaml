@@ -35,7 +35,9 @@ spec:
             - name: UPLOAD_LOCATION
               value: "/data"
             - name: REDIS_HOSTNAME
-              value: "redis-cluster-leader.redis.svc.cluster.local"
+              value: "redis.immich.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
             - name: DB_HOSTNAME
               value: "immich-cluster-rw.db.svc.cluster.local"
             - name: DB_PORT
