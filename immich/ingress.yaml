@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: immich-ingress
+  namespace: immich
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`foto.cngei.it`)
+      services:
+        - kind: Service
+          name: immich
+          port: 2283
+  tls:
+    secretName: immich-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: immich-cert
+  namespace: immich
+spec:
+  secretName: immich-tls
+  dnsNames:
+    - "foto.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
