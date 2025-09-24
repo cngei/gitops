@@ -38,6 +38,8 @@ spec:
               value: "redis.immich.svc.cluster.local"
             - name: REDIS_PORT
               value: "6379"
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: "http://immich-machine-learning.immich.svc.cluster.local:3003"
             - name: DB_HOSTNAME
               value: "immich-cluster-rw.db.svc.cluster.local"
             - name: DB_PORT
