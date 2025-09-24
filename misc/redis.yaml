@@ -4,7 +4,7 @@ metadata:
   name: redis-cluster
   namespace: redis
 spec:
-  clusterSize: 3
+  clusterSize: 1
   clusterVersion: v7
   persistenceEnabled: true
   podSecurityContext:
