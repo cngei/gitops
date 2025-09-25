@@ -9,6 +9,8 @@ spec:
   routes:
     - kind: Rule
       match: Host(`analytics.cngei.it`)
+      middlewares:
+        - name: trust-forwarded-headers
       services:
         - kind: Service
           name: umami

@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: trust-forwarded-headers
+  namespace: default
+spec:
+  ipWhiteList:
+    sourceRange:
+      - "0.0.0.0/0"  # Trust all sources (adjust as needed)
+    trustForwardHeader: true
