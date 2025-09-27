@@ -31,4 +31,4 @@ spec:
                   name: pg-cluster-assemblee-credentials
                   key: password
             - name: REDISHOST
-              value: "redis-cluster-leader.redis.svc.cluster.local"
+              value: "redis.assemblee.svc.cluster.local"
