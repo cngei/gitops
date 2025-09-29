@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: sc
-          image: ghcr.io/cngei/sc:dev-a1aced210324d194f44d687f125423cb32602912
+          image: ghcr.io/cngei/sc:dev-5747cbf7c2ccfbdcabc8921d5bd2518dcd3ace03
           ports:
             - containerPort: 8080
           env:
