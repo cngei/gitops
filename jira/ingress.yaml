@@ -8,7 +8,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`help.cngei.it`)
+      match: Host(`jira.cngei.it`)
       services:
         - kind: Service
           name: jira-helm
@@ -24,7 +24,7 @@ metadata:
 spec:
   secretName: jira-tls
   dnsNames:
-    - "help.cngei.it"
+    - "jira.cngei.it"
   issuerRef:
     name: le-cert-issuer
     kind: ClusterIssuer

@@ -38,7 +38,6 @@ spec:
               maxHeap: "4096m"
               minHeap: "2048m"
               reservedCodeCache: "1024m"
-
   destination:
     server: "https://kubernetes.default.svc"
     namespace: jira
