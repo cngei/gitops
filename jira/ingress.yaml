@@ -11,7 +11,7 @@ spec:
       match: Host(`jira.cngei.it`)
       services:
         - kind: Service
-          name: jira-helm
+          name: jira
           port: 80
   tls:
     secretName: jira-tls
