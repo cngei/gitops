@@ -1,0 +1,42 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: help-redirect
+  namespace: jira
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`help.cngei.it`)
+      kind: Rule
+      services:
+        - name: jira
+          port: 80
+      middlewares:
+        - name: help-redirect-middleware
+  tls:
+    secretName: help-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: help-redirect-middleware
+  namespace: jira
+spec:
+  redirectRegex:
+    regex: ".*"
+    replacement: "https://jira.cngei.it/servicedesk/customer/portals"
+    permanent: true
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: help-cert
+  namespace: jira
+spec:
+  secretName: help-tls
+  dnsNames:
+    - "help.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
