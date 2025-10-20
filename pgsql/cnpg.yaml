@@ -21,6 +21,9 @@ spec:
   storage:
     size: 20Gi
     storageClass: longhorn-pg
+  postgresql:
+    parameters:
+      max_connections: "200"
   managed:
     roles:
       - name: keycloak
