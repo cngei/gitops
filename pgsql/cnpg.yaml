@@ -17,7 +17,7 @@ kind: Cluster
 metadata:
   name: pg-cluster
 spec:
-  instances: 1
+  instances: 2
   storage:
     size: 25Gi
     storageClass: longhorn-pg
