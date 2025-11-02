@@ -18,6 +18,14 @@ spec:
           image: ghcr.io/cngei/sc:9bff6a707e4bec89a60f068972a15c568f6f5741
           ports:
             - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /swagger-ui/index.html
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           env:
             - name: DB_STRING
               valueFrom:
