@@ -107,8 +107,8 @@ spec:
                   key: webdavToken
           resources:
             requests:
-              cpu: 1000m
-              memory: 4Gi
+              cpu: 2000m
+              memory: 8Gi
             limits:
               cpu: 4000m
-              memory: 6Gi
+              memory: 8Gi
