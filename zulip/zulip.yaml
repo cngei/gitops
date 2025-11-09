@@ -1,0 +1,311 @@
+---
+# PersistentVolumeClaims for Zulip all-in-one deployment
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: zulip
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-data
+  namespace: zulip
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-data
+  namespace: zulip
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-pg
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zulip-data
+  namespace: zulip
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zulip
+  namespace: zulip
+  labels:
+    app: zulip
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: zulip
+  template:
+    metadata:
+      labels:
+        app: zulip
+    spec:
+      containers:
+        - name: redis
+          image: redis:alpine
+          command:
+            - "sh"
+            - "-euc"
+            - |
+              echo "requirepass '$$REDIS_PASSWORD'" > /etc/redis.conf
+              exec redis-server /etc/redis.conf
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-app-secrets
+                  key: redis-password
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: redis-persistent-storage
+              mountPath: /var/lib/redis
+
+        - name: memcached
+          image: memcached:alpine
+          command:
+            - "sh"
+            - "-euc"
+            - |
+              echo 'mech_list: plain' > "$$SASL_CONF_PATH"
+              echo "zulip@$$HOSTNAME:$$MEMCACHED_PASSWORD" > "$$MEMCACHED_SASL_PWDB"
+              echo "zulip@localhost:$$MEMCACHED_PASSWORD" >> "$$MEMCACHED_SASL_PWDB"
+              exec memcached -S
+          env:
+            - name: SASL_CONF_PATH
+              value: "/home/memcache/memcached.conf"
+            - name: MEMCACHED_SASL_PWDB
+              value: "/home/memcache/memcached-sasl-db"
+            - name: MEMCACHED_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-app-secrets
+                  key: memcached-password
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 768Mi
+
+        - name: rabbitmq
+          image: rabbitmq:3.12-alpine
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: "zulip"
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-rabbitmq-credentials
+                  key: password
+          volumeMounts:
+            - name: rabbitmq-persistent-storage
+              mountPath: /var/lib/rabbitmq
+
+        - name: postgresql
+          image: zulip/zulip-postgresql:14
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_DB
+              value: zulip
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-zulip-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-zulip-credentials
+                  key: password
+          volumeMounts:
+            - name: postgresql-persistent-storage
+              mountPath: /var/lib/postgresql/data
+
+        - name: zulip
+          image: zulip/docker-zulip:11.4-0
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+            limits:
+              cpu: 2000m
+              memory: 8Gi
+          env:
+            # Service hosts (localhost for all-in-one pod)
+            - name: DB_HOST
+              value: "localhost"
+            - name: MEMCACHED_HOST
+              value: "localhost"
+            - name: REDIS_HOST
+              value: "localhost"
+            - name: RABBITMQ_HOST
+              value: "localhost"
+
+            # Authentication
+            - name: ZULIP_AUTH_BACKENDS
+              value: "EmailAuthBackend,SAMLAuthBackend"
+
+            # External configuration
+            - name: SETTING_EXTERNAL_HOST
+              value: "chat.cngei.it"
+            - name: SETTING_ZULIP_ADMINISTRATOR
+              value: "paolo.campanelli@cngei.it"
+
+            # Email settings
+            - name: SETTING_EMAIL_HOST
+              value: ""
+            - name: SETTING_EMAIL_HOST_USER
+              value: ""
+            - name: SECRETS_email_password
+              value: ""
+
+            # Initial user (optional - can be created via web UI)
+            # - name: ZULIP_USER_EMAIL
+            #   value: "admin@cngei.it"
+            # - name: ZULIP_USER_DOMAIN
+            #   value: "cngei.it"
+            # - name: ZULIP_USER_PASS
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: zulip-app-secrets
+            #       key: admin-password
+
+            # Secrets from Kubernetes secrets
+            - name: SECRETS_secret_key
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-app-secrets
+                  key: secret-key
+            - name: SECRETS_postgres_password
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-zulip-credentials
+                  key: password
+            - name: SECRETS_memcached_password
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-app-secrets
+                  key: memcached-password
+            - name: SECRETS_rabbitmq_password
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-rabbitmq-credentials
+                  key: password
+            - name: SECRETS_redis_password
+              valueFrom:
+                secretKeyRef:
+                  name: zulip-app-secrets
+                  key: redis-password
+
+            # SSL certificate generation
+            - name: SSL_CERTIFICATE_GENERATION
+              value: "off"
+            - name: DISABLE_HTTPS
+              value: "True"
+            - name: LOADBALANCER_IPS
+              value: "10.0.0.0/8"
+
+            - name: ZULIP_CUSTOM_SETTINGS
+              value: |
+                SOCIAL_AUTH_SAML_ENABLED_IDPS = {
+                  "keycloak": {
+                     "entity_id": "https://auth.cngei.it/auth/realms/cngei",
+                     "url": "https://auth.cngei.it/auth/realms/cngei/protocol/saml",
+                     "slo_url": "https://auth.cngei.it/auth/realms/cngei/protocol/saml",
+                     "x509cert": "MIICmTCCAYECBgGT+barMDANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVjbmdlaTAeFw0yNDEyMjQxNzI2NThaFw0zNDEyMjQxNzI4MzhaMBAxDjAMBgNVBAMMBWNuZ2VpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4lnyQzKbAsYjFeW923O1NHrYx6bPMnOec1Cm2ubwx/PLu5hjhgtug1esxN2Nt2ZEtAHQL7BP/oDWT31MXe91zCGk55qIwI4IWHcOPj0/Cp/veyvDnZd1tYKhgduZhRkPt4qQQPY0EvLqih3IptwLpFqaj2QMR/jIGgOLywAxaQFz5Aen3WktQaj9oTFNyh/xZl3rTrdal/1hWh5NvIVFUhIxMOZ+Z/tbjGjD7ptUS+LkWxWRgWK2IwDRXMEs7YfEQf1R2kCzVK/+a30H2FnGS+WgVrlQ60Rixhu56/zbbj6bI0C1rcUjS1Q7ugwaIwEVjVN0T7BNL391Rv/f4b/VvQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBmB08wiBjDTkFWi5w38vz//8iM07kC81W9Y5QQFtJkHnRoiNLaxliSdhEU23k+GO50ripGO6h8Fv6dTypYDZPc9kmflYikCQEYPYf8KaSVkcUW3m3UTS+cPf5v2pSZTE6yOLsPE22O3A4fBrp0ZQ04Uj1+X+dvYj7DWUS5bXBQV8QFtGpUN7B+F/cDtKSqg/SZzr3GZULDDqMFD2g7okOGV77iVkgORpr4ejC0dzlxV9RBGhbtS9k+OsLDZqnZcAcdxe0SXrKGe9M1CtQIgACjDZz8uiseDl/oWHQsLq9DxURd/aIyAdfXB2tSH7ab2K5+lQGIjcMREZAICTlYNTgT",
+                     "attr_user_permanent_id": "name_id",
+                     "attr_first_name": "first_name",
+                     "attr_last_name": "last_name",
+                     "attr_username": "email",
+                     "attr_email": "email",
+                     "display_name": "CNGEI",
+                     "auto_signup": True
+                  }
+                }
+                SOCIAL_AUTH_SAML_SP_ENTITY_ID = "zulip"
+                SOCIAL_AUTH_SAML_SP_PUBLIC_CERT = "MIICmTCCAYECBgGT+barMDANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVjbmdlaTAeFw0yNDEyMjQxNzI2NThaFw0zNDEyMjQxNzI4MzhaMBAxDjAMBgNVBAMMBWNuZ2VpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4lnyQzKbAsYjFeW923O1NHrYx6bPMnOec1Cm2ubwx/PLu5hjhgtug1esxN2Nt2ZEtAHQL7BP/oDWT31MXe91zCGk55qIwI4IWHcOPj0/Cp/veyvDnZd1tYKhgduZhRkPt4qQQPY0EvLqih3IptwLpFqaj2QMR/jIGgOLywAxaQFz5Aen3WktQaj9oTFNyh/xZl3rTrdal/1hWh5NvIVFUhIxMOZ+Z/tbjGjD7ptUS+LkWxWRgWK2IwDRXMEs7YfEQf1R2kCzVK/+a30H2FnGS+WgVrlQ60Rixhu56/zbbj6bI0C1rcUjS1Q7ugwaIwEVjVN0T7BNL391Rv/f4b/VvQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBmB08wiBjDTkFWi5w38vz//8iM07kC81W9Y5QQFtJkHnRoiNLaxliSdhEU23k+GO50ripGO6h8Fv6dTypYDZPc9kmflYikCQEYPYf8KaSVkcUW3m3UTS+cPf5v2pSZTE6yOLsPE22O3A4fBrp0ZQ04Uj1+X+dvYj7DWUS5bXBQV8QFtGpUN7B+F/cDtKSqg/SZzr3GZULDDqMFD2g7okOGV77iVkgORpr4ejC0dzlxV9RBGhbtS9k+OsLDZqnZcAcdxe0SXrKGe9M1CtQIgACjDZz8uiseDl/oWHQsLq9DxURd/aIyAdfXB2tSH7ab2K5+lQGIjcMREZAICTlYNTgT"
+                ZULIP_SERVICE_PUSH_NOTIFICATIONS = True
+#            - name: SOCIAL_AUTH_SAML_SP_PRIVATE_KEY
+#              valueFrom:
+#                secretKeyRef:
+#                  name: zulip-app-secrets
+#                  key: saml-sp-key
+
+
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+            - containerPort: 443
+              name: https
+              protocol: TCP
+          volumeMounts:
+            - name: zulip-persistent-storage
+              mountPath: /data
+
+      volumes:
+        - name: redis-persistent-storage
+          persistentVolumeClaim:
+            claimName: redis-data
+        - name: rabbitmq-persistent-storage
+          persistentVolumeClaim:
+            claimName: rabbitmq-data
+        - name: postgresql-persistent-storage
+          persistentVolumeClaim:
+            claimName: postgresql-data
+        - name: zulip-persistent-storage
+          persistentVolumeClaim:
+            claimName: zulip-data
