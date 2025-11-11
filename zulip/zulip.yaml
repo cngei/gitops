@@ -277,6 +277,13 @@ spec:
                 }
                 SOCIAL_AUTH_SAML_SP_ENTITY_ID = "zulip"
                 SOCIAL_AUTH_SAML_SP_PUBLIC_CERT = "MIICmTCCAYECBgGT+barMDANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVjbmdlaTAeFw0yNDEyMjQxNzI2NThaFw0zNDEyMjQxNzI4MzhaMBAxDjAMBgNVBAMMBWNuZ2VpMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4lnyQzKbAsYjFeW923O1NHrYx6bPMnOec1Cm2ubwx/PLu5hjhgtug1esxN2Nt2ZEtAHQL7BP/oDWT31MXe91zCGk55qIwI4IWHcOPj0/Cp/veyvDnZd1tYKhgduZhRkPt4qQQPY0EvLqih3IptwLpFqaj2QMR/jIGgOLywAxaQFz5Aen3WktQaj9oTFNyh/xZl3rTrdal/1hWh5NvIVFUhIxMOZ+Z/tbjGjD7ptUS+LkWxWRgWK2IwDRXMEs7YfEQf1R2kCzVK/+a30H2FnGS+WgVrlQ60Rixhu56/zbbj6bI0C1rcUjS1Q7ugwaIwEVjVN0T7BNL391Rv/f4b/VvQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBmB08wiBjDTkFWi5w38vz//8iM07kC81W9Y5QQFtJkHnRoiNLaxliSdhEU23k+GO50ripGO6h8Fv6dTypYDZPc9kmflYikCQEYPYf8KaSVkcUW3m3UTS+cPf5v2pSZTE6yOLsPE22O3A4fBrp0ZQ04Uj1+X+dvYj7DWUS5bXBQV8QFtGpUN7B+F/cDtKSqg/SZzr3GZULDDqMFD2g7okOGV77iVkgORpr4ejC0dzlxV9RBGhbtS9k+OsLDZqnZcAcdxe0SXrKGe9M1CtQIgACjDZz8uiseDl/oWHQsLq9DxURd/aIyAdfXB2tSH7ab2K5+lQGIjcMREZAICTlYNTgT"
+                SOCIAL_AUTH_SYNC_ATTRS_DICT = {
+                    "": {
+                      "saml": {
+                        "groups": ["IT", "COCE", "COCL", "COCR", "COCST", "COCF", "CN"],
+                      }
+                    }
+                }
                 ZULIP_SERVICE_PUSH_NOTIFICATIONS = True
 #            - name: SOCIAL_AUTH_SAML_SP_PRIVATE_KEY
 #              valueFrom:
