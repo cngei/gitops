@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: sc
-          image: ghcr.io/cngei/sc:6cb486a4f6db4bb3d12671327edf1eb7a878eab9
+          image: ghcr.io/cngei/sc:017bacae6a249e967e96b682009e00e49bece4f1
           ports:
             - containerPort: 8080
           livenessProbe:
