@@ -1,0 +1,13 @@
+---
+# Metabase metadata database
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-metabase
+  namespace: db
+spec:
+  name: metabase
+  owner: metabase
+  cluster:
+    name: pg-cluster
+---

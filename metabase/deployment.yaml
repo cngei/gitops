@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metabase
+  namespace: metabase
+  labels:
+    app: metabase
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: metabase
+  template:
+    metadata:
+      labels:
+        app: metabase
+    spec:
+      containers:
+        - name: metabase
+          image: metabase/metabase:latest
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            # Database configuration for Metabase metadata
+            - name: MB_DB_TYPE
+              value: "postgres"
+            - name: MB_DB_DBNAME
+              value: "metabase"
+            - name: MB_DB_PORT
+              value: "5432"
+            - name: MB_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-metabase-credentials
+                  key: username
+            - name: MB_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-metabase-credentials
+                  key: password
+            - name: MB_DB_HOST
+              value: "pg-cluster-rw.db.svc.cluster.local"
+
+            # Metabase configuration
+            - name: MB_JETTY_HOST
+              value: "0.0.0.0"
+            - name: MB_JETTY_PORT
+              value: "3000"
+            - name: MB_SITE_URL
+              value: "https://opendata.cngei.it"
+
+            # Java options
+            - name: JAVA_OPTS
+              value: "-Xmx2g -Xms1g"
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

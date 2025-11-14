@@ -1,0 +1,31 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: metabase-ingress
+  namespace: metabase
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`opendata.cngei.it`)
+      services:
+        - kind: Service
+          name: metabase
+          port: 3000
+  tls:
+    secretName: metabase-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: metabase-cert
+  namespace: metabase
+spec:
+  secretName: metabase-tls
+  dnsNames:
+    - "opendata.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer

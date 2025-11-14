@@ -107,6 +107,15 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-immich-credentials
+      - name: metabase
+        ensure: present
+        login: true
+        superuser: false
+        inRoles:
+          - pg_monitor
+          - pg_signal_backend
+        passwordSecret:
+          name: pg-cluster-metabase-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
