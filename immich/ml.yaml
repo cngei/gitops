@@ -30,6 +30,8 @@ spec:
             - name: immich-data
               mountPath: /usr/src/app/upload
           env:
+            - name: IMMICH_PORT
+              value: "2283"
             - name: NODE_ENV
               value: "production"
           imagePullPolicy: Always
@@ -51,3 +53,4 @@ spec:
       targetPort: 3003
       protocol: TCP
   type: ClusterIP
+
