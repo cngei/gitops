@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: vaultwarden
-          image: vaultwarden/server:1.33.2
+          image: vaultwarden/server:1.35.1
           ports:
             - containerPort: 80
           env:
@@ -28,6 +28,19 @@ spec:
               value: "noreply@cngei.it"
             - name: SMTP_USERNAME
               value: "help@cngei.it"
+            - name: SSO_ENABLED
+              value: "true"
+            - name: SSO_ONLY
+              value: "true"
+            - name: SSO_AUTHORITY
+              value: "https://auth.cngei.it/auth/realms/cngei"
+            - name: SSO_CLIENT_ID
+              value: "vaultwarden"
+            - name: SSO_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-smtp-password
+                  key: clientsecret
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
