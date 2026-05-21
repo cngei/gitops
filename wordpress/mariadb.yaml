@@ -18,4 +18,4 @@ spec:
     storageClassName: longhorn
   metrics:
     enabled: false
-  replicas: 2
+  replicas: 1
