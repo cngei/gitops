@@ -1,0 +1,14 @@
+apiVersion: helm.mariadb.mmontes.io/v1alpha1
+kind: MariadbOperator
+metadata:
+  name: mariadb-operator
+  namespace: mariadb
+spec:
+  ha:
+    enabled: true
+  metrics:
+    enabled: false
+  webhook:
+    cert:
+      certManager:
+        enabled: true
