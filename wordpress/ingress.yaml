@@ -1,0 +1,15 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`cngei.it`) || Host(`www.cngei.it`) || Host(`new.cngei.it`)
+      services:
+        - kind: Service
+          name: wordpress
+          port: 80
