@@ -11,7 +11,6 @@ metadata:
   name: mariadb
   namespace: mariadb
 spec:
-  channel: stable
   installPlanApproval: Automatic
   name: mariadb-operator
   source: operatorhubio-catalog
