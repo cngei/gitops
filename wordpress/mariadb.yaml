@@ -6,9 +6,11 @@ metadata:
 spec:
   rootPasswordSecretKeyRef:
     name: wordpress-mariadb-root-password
+    key: password
   username: wordpress
   passwordSecretKeyRef:
     name: wordpress-mariadb-password
+    key: password
   database: wordpress
   port: 3306
   storage:
