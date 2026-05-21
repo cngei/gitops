@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: wordpress
-          image: wordpress:php8.5-fpm
+          image: wordpress:php8.5-apache
           ports:
             - containerPort: 80
           env:
