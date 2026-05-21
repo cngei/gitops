@@ -5,7 +5,7 @@ metadata:
   namespace: wordpress
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
     - kind: Rule
       match: Host(`cngei.it`) || Host(`www.cngei.it`) || Host(`new.cngei.it`)
@@ -13,3 +13,5 @@ spec:
         - kind: Service
           name: wordpress
           port: 80
+  tls:
+    secretName: wordpress-tls
