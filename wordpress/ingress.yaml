@@ -17,6 +17,17 @@ spec:
     secretName: wordpress-tls
 ---
 apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: webdav-transport
+  namespace: wordpress
+spec:
+  forwardingTimeouts:
+    dialTimeout: 300s
+    responseHeaderTimeout: 300s
+    idleConnTimeout: 0s
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: wordpress-webdav-ingress
@@ -31,6 +42,7 @@ spec:
         - kind: Service
           name: wordpress-webdav
           port: 80
+          serversTransport: webdav-transport
       middlewares:
         - name: webdav-headers
   tls:
