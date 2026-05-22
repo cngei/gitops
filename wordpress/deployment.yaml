@@ -1,4 +1,16 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-apache-config
+  namespace: wordpress
+data:
+  proxy-trust.conf: |
+    LoadModule remoteip_module modules/mod_remoteip.so
+    RemoteIPHeader X-Forwarded-For
+    RemoteIPInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    SetEnvIf X-Forwarded-Proto https HTTPS=on
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: wordpress-pvc
@@ -52,10 +64,16 @@ spec:
           volumeMounts:
             - name: wordpress-data
               mountPath: /var/www/html
+            - name: apache-config
+              mountPath: /usr/local/etc/apache2/conf-enabled/proxy-trust.conf
+              subPath: proxy-trust.conf
       volumes:
         - name: wordpress-data
           persistentVolumeClaim:
             claimName: wordpress-pvc
+        - name: apache-config
+          configMap:
+            name: wordpress-apache-config
 ---
 apiVersion: v1
 kind: Service
