@@ -15,3 +15,33 @@ spec:
           port: 80
   tls:
     secretName: wordpress-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-webdav-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`webdav-www.cngei.it`)
+      services:
+        - kind: Service
+          name: wordpress-webdav
+          port: 80
+      middlewares:
+        - name: webdav-headers
+  tls:
+    secretName: wordpress-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: webdav-headers
+  namespace: wordpress
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: https

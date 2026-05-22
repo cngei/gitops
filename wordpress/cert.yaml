@@ -18,6 +18,7 @@ spec:
     - "cngei.it"
     - "www.cngei.it"
     - "new.cngei.it"
+    - "webdav-www.cngei.it"
   issuerRef:
     name: selfsigned-cluster-issuer
     kind: ClusterIssuer
