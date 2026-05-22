@@ -68,39 +68,37 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wordpress-ftp
+  name: wordpress-webdav
   namespace: wordpress
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: wordpress-ftp
+      app: wordpress-webdav
   template:
     metadata:
       labels:
-        app: wordpress-ftp
+        app: wordpress-webdav
     spec:
       containers:
-        - name: ftp
-          image: stilliard/pure-ftpd:latest
+        - name: webdav
+          image: bytemark/webdav:latest
           ports:
-            - containerPort: 21
+            - containerPort: 80
           env:
-            - name: FTP_USER_NAME
+            - name: USERNAME
               valueFrom:
                 secretKeyRef:
                   name: wordpress-ftp-credentials
                   key: ftp-user
-            - name: FTP_USER_PASS
+            - name: PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: wordpress-ftp-credentials
                   key: ftp-pass
-            - name: FTP_USER_HOME
-              value: /var/www/html
           volumeMounts:
             - name: wordpress-data
-              mountPath: /var/www/html
+              mountPath: /var/lib/dav
       volumes:
         - name: wordpress-data
           persistentVolumeClaim:
@@ -109,14 +107,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: wordpress-ftp
+  name: wordpress-webdav
   namespace: wordpress
 spec:
   selector:
-    app: wordpress-ftp
+    app: wordpress-webdav
   ports:
-    - name: ftp
+    - name: webdav
       protocol: TCP
-      port: 21
-      targetPort: 21
-  type: ClusterIP
+      port: 80
+      targetPort: 80
+  type: NodePort
