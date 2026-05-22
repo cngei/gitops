@@ -120,12 +120,9 @@ spec:
                 secretKeyRef:
                   name: wordpress-ftp-credentials
                   key: ftp-pass
-          securityContext:
-            runAsUser: 33
-            runAsGroup: 33
           volumeMounts:
             - name: wordpress-data
-              mountPath: /var/lib/dav
+              mountPath: /var/lib/dav/data
       volumes:
         - name: wordpress-data
           persistentVolumeClaim:
