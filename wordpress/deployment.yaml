@@ -64,3 +64,59 @@ spec:
       port: 80
       targetPort: 80
   type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-ftp
+  namespace: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-ftp
+  template:
+    metadata:
+      labels:
+        app: wordpress-ftp
+    spec:
+      containers:
+        - name: ftp
+          image: stilliard/pure-ftpd:latest
+          ports:
+            - containerPort: 21
+          env:
+            - name: FTP_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-ftp-credentials
+                  key: ftp-user
+            - name: FTP_USER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-ftp-credentials
+                  key: ftp-pass
+            - name: FTP_USER_HOME
+              value: /var/www/html
+          volumeMounts:
+            - name: wordpress-data
+              mountPath: /var/www/html
+      volumes:
+        - name: wordpress-data
+          persistentVolumeClaim:
+            claimName: wordpress-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-ftp
+  namespace: wordpress
+spec:
+  selector:
+    app: wordpress-ftp
+  ports:
+    - name: ftp
+      protocol: TCP
+      port: 21
+      targetPort: 21
+  type: ClusterIP
