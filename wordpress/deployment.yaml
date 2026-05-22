@@ -8,7 +8,7 @@ data:
     LoadModule remoteip_module modules/mod_remoteip.so
     RemoteIPHeader X-Forwarded-For
     RemoteIPInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
-    SetEnvIf X-Forwarded-Proto https HTTPS=on
+    SetEnv HTTPS on
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
