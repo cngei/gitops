@@ -11,7 +11,7 @@ spec:
       match: Host(`cngei.it`) || Host(`www.cngei.it`) || Host(`new.cngei.it`)
       services:
         - kind: Service
-          name: wordpress
+          name: wordpress-clean
           port: 80
   tls:
     secretName: wordpress-tls
