@@ -11,6 +11,18 @@ spec:
     requests:
       storage: 20Gi
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-clean-apache-config
+  namespace: wordpress
+data:
+  force-https.conf: |
+    <IfModule mod_headers.c>
+      RequestHeader set X-Forwarded-Proto "https"
+      RequestHeader set HTTPS "on"
+    </IfModule>
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,11 +55,23 @@ spec:
                   key: password
             - name: WORDPRESS_DB_NAME
               value: wordpress
+            - name: HTTPS
+              value: "on"
+            - name: WORDPRESS_CONFIG_EXTRA
+              value: |
+                $_SERVER['HTTPS'] = 'on';
+                if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'http') {
+                    $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+                }
           volumeMounts:
             - name: wordpress-clean-data
               mountPath: /var/www/html
             - name: wordpress-old-data
               mountPath: /old
+              readOnly: true
+            - name: apache-config
+              mountPath: /etc/apache2/conf-enabled/force-https.conf
+              subPath: force-https.conf
               readOnly: true
       volumes:
         - name: wordpress-clean-data
@@ -56,6 +80,9 @@ spec:
         - name: wordpress-old-data
           persistentVolumeClaim:
             claimName: wordpress-pvc
+        - name: apache-config
+          configMap:
+            name: wordpress-clean-apache-config
 ---
 apiVersion: v1
 kind: Service
