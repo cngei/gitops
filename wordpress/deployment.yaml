@@ -6,9 +6,20 @@ metadata:
 data:
   proxy-trust.conf: |
     LoadModule remoteip_module modules/mod_remoteip.so
+    LoadModule rewrite_module modules/mod_rewrite.so
     RemoteIPHeader X-Forwarded-For
     RemoteIPInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
     SetEnv HTTPS on
+    <Directory "/var/www/html">
+        AllowOverride None
+        RewriteEngine On
+        RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+        RewriteBase /
+        RewriteRule ^index\.php$ - [L]
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule . /index.php [L]
+    </Directory>
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
