@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-clean-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`test.cngei.it`)
+      services:
+        - kind: Service
+          name: wordpress-clean
+          port: 80
+  tls:
+    secretName: wordpress-clean-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wordpress-clean-cert
+  namespace: wordpress
+spec:
+  secretName: wordpress-clean-tls
+  dnsNames:
+    - "test.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer

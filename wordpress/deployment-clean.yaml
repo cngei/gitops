@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-clean-pvc
+  namespace: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-clean
+  namespace: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-clean
+  template:
+    metadata:
+      labels:
+        app: wordpress-clean
+    spec:
+      containers:
+        - name: wordpress
+          image: wordpress:7-php8.5-apache
+          ports:
+            - containerPort: 80
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: wordpress-mariadb.wordpress.svc.cluster.local:3306
+            - name: WORDPRESS_DB_USER
+              value: wordpress
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-mariadb-password
+                  key: password
+            - name: WORDPRESS_DB_NAME
+              value: wordpress
+          volumeMounts:
+            - name: wordpress-clean-data
+              mountPath: /var/www/html
+            - name: wordpress-old-data
+              mountPath: /old
+              readOnly: true
+      volumes:
+        - name: wordpress-clean-data
+          persistentVolumeClaim:
+            claimName: wordpress-clean-pvc
+        - name: wordpress-old-data
+          persistentVolumeClaim:
+            claimName: wordpress-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-clean
+  namespace: wordpress
+spec:
+  selector:
+    app: wordpress-clean
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
