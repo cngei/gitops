@@ -8,7 +8,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`test.cngei.it`)
+      match: Host(`cngei.it`) || Host(`www.cngei.it`)
       services:
         - kind: Service
           name: wordpress-clean
@@ -24,7 +24,8 @@ metadata:
 spec:
   secretName: wordpress-clean-tls
   dnsNames:
-    - "test.cngei.it"
+    - "cngei.it"
+    - "www.cngei.it"
   issuerRef:
     name: le-cert-issuer
     kind: ClusterIssuer
