@@ -1,0 +1,219 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-lupetti
+  namespace: wordpress
+spec:
+  redirectRegex:
+    regex: "^(.*)$"
+    replacement: "https://cngei.it/giovani/lupetti${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: brancal-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`brancal.cngei.it`)
+      middlewares:
+        - name: redirect-lupetti
+      services:
+        - kind: Service
+          name: noop
+          port: 80
+  tls:
+    secretName: brancal-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brancal-cert
+  namespace: wordpress
+spec:
+  secretName: brancal-tls
+  dnsNames:
+    - "brancal.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-esploratori
+  namespace: wordpress
+spec:
+  redirectRegex:
+    regex: "^(.*)$"
+    replacement: "https://cngei.it/giovani/esploratori-ed-esploratrici${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: brancae-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`brancae.cngei.it`)
+      middlewares:
+        - name: redirect-esploratori
+      services:
+        - kind: Service
+          name: noop
+          port: 80
+  tls:
+    secretName: brancae-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brancae-cert
+  namespace: wordpress
+spec:
+  secretName: brancae-tls
+  dnsNames:
+    - "brancae.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-rover
+  namespace: wordpress
+spec:
+  redirectRegex:
+    regex: "^(.*)$"
+    replacement: "https://cngei.it/giovani/rover${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: brancar-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`brancar.cngei.it`)
+      middlewares:
+        - name: redirect-rover
+      services:
+        - kind: Service
+          name: noop
+          port: 80
+  tls:
+    secretName: brancar-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brancar-cert
+  namespace: wordpress
+spec:
+  secretName: brancar-tls
+  dnsNames:
+    - "brancar.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-unisciti
+  namespace: wordpress
+spec:
+  redirectRegex:
+    regex: "^(.*)$"
+    replacement: "https://cngei.it/unisciti-a-noi${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: international-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`international.cngei.it`)
+      middlewares:
+        - name: redirect-unisciti
+      services:
+        - kind: Service
+          name: noop
+          port: 80
+  tls:
+    secretName: international-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: international-cert
+  namespace: wordpress
+spec:
+  secretName: international-tls
+  dnsNames:
+    - "international.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-adulti
+  namespace: wordpress
+spec:
+  redirectRegex:
+    regex: "^(.*)$"
+    replacement: "https://cngei.it/adulti${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: risorseadulte-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`risorseadulte.cngei.it`)
+      middlewares:
+        - name: redirect-adulti
+      services:
+        - kind: Service
+          name: noop
+          port: 80
+  tls:
+    secretName: risorseadulte-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: risorseadulte-cert
+  namespace: wordpress
+spec:
+  secretName: risorseadulte-tls
+  dnsNames:
+    - "risorseadulte.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
