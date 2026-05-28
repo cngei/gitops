@@ -6,7 +6,17 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/giovani/lupetti"
+    replacement: "https://cngei.it/giovani/lupetti${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-lupetti-http
+  namespace: wordpress
+spec:
+  redirectScheme:
+    scheme: https
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -29,6 +39,24 @@ spec:
   tls:
     secretName: brancal-tls
 ---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: brancal-http-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`brancal.cngei.it`)
+      middlewares:
+        - name: redirect-lupetti-http
+      services:
+        - kind: Service
+          name: wordpress-clean
+          port: 80
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -50,7 +78,17 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/giovani/esploratori-ed-esploratrici"
+    replacement: "https://cngei.it/giovani/esploratori-ed-esploratrici${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-esploratori-http
+  namespace: wordpress
+spec:
+  redirectScheme:
+    scheme: https
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -73,6 +111,24 @@ spec:
   tls:
     secretName: brancae-tls
 ---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: brancae-http-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`brancae.cngei.it`)
+      middlewares:
+        - name: redirect-esploratori-http
+      services:
+        - kind: Service
+          name: wordpress-clean
+          port: 80
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -94,7 +150,17 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/giovani/rover"
+    replacement: "https://cngei.it/giovani/rover${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-rover-http
+  namespace: wordpress
+spec:
+  redirectScheme:
+    scheme: https
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -117,6 +183,24 @@ spec:
   tls:
     secretName: brancar-tls
 ---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: brancar-http-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`brancar.cngei.it`)
+      middlewares:
+        - name: redirect-rover-http
+      services:
+        - kind: Service
+          name: wordpress-clean
+          port: 80
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -138,7 +222,17 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/unisciti-a-noi"
+    replacement: "https://cngei.it/unisciti-a-noi${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-unisciti-http
+  namespace: wordpress
+spec:
+  redirectScheme:
+    scheme: https
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -161,6 +255,24 @@ spec:
   tls:
     secretName: international-tls
 ---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: international-http-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`international.cngei.it`)
+      middlewares:
+        - name: redirect-unisciti-http
+      services:
+        - kind: Service
+          name: wordpress-clean
+          port: 80
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -182,7 +294,17 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/adulti"
+    replacement: "https://cngei.it/adulti${1}"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-adulti-http
+  namespace: wordpress
+spec:
+  redirectScheme:
+    scheme: https
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -204,6 +326,24 @@ spec:
           port: 80
   tls:
     secretName: risorseadulte-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: risorseadulte-http-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`risorseadulte.cngei.it`)
+      middlewares:
+        - name: redirect-adulti-http
+      services:
+        - kind: Service
+          name: wordpress-clean
+          port: 80
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
