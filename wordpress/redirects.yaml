@@ -24,7 +24,7 @@ spec:
         - name: redirect-lupetti
       services:
         - kind: Service
-          name: noop
+          name: wordpress-clean
           port: 80
   tls:
     secretName: brancal-tls
@@ -68,7 +68,7 @@ spec:
         - name: redirect-esploratori
       services:
         - kind: Service
-          name: noop
+          name: wordpress-clean
           port: 80
   tls:
     secretName: brancae-tls
@@ -112,7 +112,7 @@ spec:
         - name: redirect-rover
       services:
         - kind: Service
-          name: noop
+          name: wordpress-clean
           port: 80
   tls:
     secretName: brancar-tls
@@ -156,7 +156,7 @@ spec:
         - name: redirect-unisciti
       services:
         - kind: Service
-          name: noop
+          name: wordpress-clean
           port: 80
   tls:
     secretName: international-tls
@@ -200,7 +200,7 @@ spec:
         - name: redirect-adulti
       services:
         - kind: Service
-          name: noop
+          name: wordpress-clean
           port: 80
   tls:
     secretName: risorseadulte-tls
