@@ -6,7 +6,7 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/giovani/lupetti${1}"
+    replacement: "https://cngei.it/giovani/lupetti"
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -50,7 +50,7 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/giovani/esploratori-ed-esploratrici${1}"
+    replacement: "https://cngei.it/giovani/esploratori-ed-esploratrici"
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -94,7 +94,7 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/giovani/rover${1}"
+    replacement: "https://cngei.it/giovani/rover"
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -138,7 +138,7 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/unisciti-a-noi${1}"
+    replacement: "https://cngei.it/unisciti-a-noi"
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
@@ -182,7 +182,7 @@ metadata:
 spec:
   redirectRegex:
     regex: "^(.*)$"
-    replacement: "https://cngei.it/adulti${1}"
+    replacement: "https://cngei.it/adulti"
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
