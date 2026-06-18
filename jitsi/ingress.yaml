@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jitsi-ingress
+  namespace: jitsi
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`meet.cngei.it`)
+      services:
+        - kind: Service
+          name: jitsi-web
+          port: 80
+  tls:
+    secretName: jitsi-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jitsi-cert
+  namespace: jitsi
+spec:
+  secretName: jitsi-tls
+  dnsNames:
+    - "meet.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer

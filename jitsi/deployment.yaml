@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jitsi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi
+  namespace: jitsi
+  labels:
+    app: jitsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jitsi
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jitsi
+    spec:
+      containers:
+        - name: prosody
+          image: jitsi/prosody:stable
+          ports:
+            - containerPort: 5222
+            - containerPort: 5347
+            - containerPort: 5280
+          env:
+            - name: XMPP_DOMAIN
+              value: "meet.cngei.it"
+            - name: XMPP_MUC_DOMAIN
+              value: "muc.meet.cngei.it"
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: "internal-muc.meet.cngei.it"
+            - name: XMPP_AUTH_DOMAIN
+              value: "auth.meet.cngei.it"
+            - name: XMPP_GUEST_DOMAIN
+              value: "guest.meet.cngei.it"
+            - name: JICOFO_COMPONENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JICOFO_COMPONENT_SECRET
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JICOFO_AUTH_PASSWORD
+            - name: JVB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JVB_AUTH_PASSWORD
+            - name: JIGASI_XMPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JIGASI_XMPP_PASSWORD
+        - name: jicofo
+          image: jitsi/jicofo:stable
+          ports:
+            - containerPort: 8080
+          env:
+            - name: XMPP_DOMAIN
+              value: "meet.cngei.it"
+            - name: XMPP_MUC_DOMAIN
+              value: "muc.meet.cngei.it"
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: "internal-muc.meet.cngei.it"
+            - name: XMPP_AUTH_DOMAIN
+              value: "auth.meet.cngei.it"
+            - name: XMPP_GUEST_DOMAIN
+              value: "guest.meet.cngei.it"
+            - name: JICOFO_COMPONENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JICOFO_COMPONENT_SECRET
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JICOFO_AUTH_PASSWORD
+            - name: JVB_BREWERY_MUC
+              value: "jvbbrewery"
+        - name: jvb
+          image: jitsi/jvb:stable
+          ports:
+            - containerPort: 8080
+            - containerPort: 10000
+              protocol: UDP
+          env:
+            - name: XMPP_DOMAIN
+              value: "meet.cngei.it"
+            - name: XMPP_MUC_DOMAIN
+              value: "muc.meet.cngei.it"
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: "internal-muc.meet.cngei.it"
+            - name: XMPP_AUTH_DOMAIN
+              value: "auth.meet.cngei.it"
+            - name: JVB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-secrets
+                  key: JVB_AUTH_PASSWORD
+            - name: JVB_BREWERY_MUC
+              value: "jvbbrewery"
+            - name: JVB_PORT_MAPPING
+              value: "10000"
+            - name: JVB_STUN_SERVERS
+              value: "stun.l.google.com:19302,stun1.l.google.com:19302"
+            - name: PUBLIC_URL
+              value: "https://meet.cngei.it"
+        - name: web
+          image: jitsi/web:stable
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          env:
+            - name: XMPP_DOMAIN
+              value: "meet.cngei.it"
+            - name: XMPP_MUC_DOMAIN
+              value: "muc.meet.cngei.it"
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: "internal-muc.meet.cngei.it"
+            - name: XMPP_AUTH_DOMAIN
+              value: "auth.meet.cngei.it"
+            - name: XMPP_GUEST_DOMAIN
+              value: "guest.meet.cngei.it"
+            - name: PUBLIC_URL
+              value: "https://meet.cngei.it"
+            - name: DISABLE_HTTPS
+              value: "true"
+            - name: ENABLE_LETSENCRYPT
+              value: "false"
