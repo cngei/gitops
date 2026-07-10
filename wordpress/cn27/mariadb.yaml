@@ -7,7 +7,7 @@ spec:
   rootPasswordSecretKeyRef:
     name: wordpress-mariadb-root-password
     key: password
-  username: wordpress
+  username: wordpress_cn27
   passwordSecretKeyRef:
     name: wordpress-cn27-mariadb-password
     key: password
