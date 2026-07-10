@@ -47,7 +47,7 @@ spec:
         node-role.kubernetes.io/worker: wordpress
       containers:
         - name: wordpress
-          image: wordpress:7-php8.5-fpm-alpine
+          image: wordpress:7-php8.5-apache
           ports:
             - containerPort: 80
           env:
