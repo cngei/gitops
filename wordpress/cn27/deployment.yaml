@@ -1,0 +1,106 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-wordpress
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "3"
+  staleReplicaTimeout: "480"
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: node-role.kubernetes.io/worker
+        values:
+          - wordpress
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-cn27-pvc
+  namespace: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-wordpress
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-cn27
+  namespace: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-cn27
+  template:
+    metadata:
+      labels:
+        app: wordpress-cn27
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/worker: wordpress
+      containers:
+        - name: wordpress
+          image: wordpress:7-php8.5-fpm-alpine
+          ports:
+            - containerPort: 80
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: wordpress-mariadb.wordpress.svc.cluster.local:3306
+            - name: WORDPRESS_DB_USER
+              value: wordpress
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-mariadb-password
+                  key: password
+            - name: WORDPRESS_DB_NAME
+              value: wordpress
+            - name: HTTPS
+              value: "on"
+            - name: WORDPRESS_CONFIG_EXTRA
+              value: |
+                $_SERVER['HTTPS'] = 'on';
+                if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'http') {
+                    $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+                }
+          volumeMounts:
+            - name: wordpress-cn27-data
+              mountPath: /var/www/html
+            - name: wordpress-old-data
+              mountPath: /old
+              readOnly: true
+            - name: apache-config
+              mountPath: /etc/apache2/conf-enabled/force-https.conf
+              subPath: force-https.conf
+              readOnly: true
+      volumes:
+        - name: wordpress-cn27-data
+          persistentVolumeClaim:
+            claimName: wordpress-cn27-pvc
+        - name: wordpress-old-data
+          persistentVolumeClaim:
+            claimName: wordpress-pvc
+        - name: apache-config
+          configMap:
+            name: wordpress-cn27-apache-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-cn27
+  namespace: wordpress
+spec:
+  selector:
+    app: wordpress-cn27
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP

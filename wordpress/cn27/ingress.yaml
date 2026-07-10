@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-cn27-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`cn27.cngei.it`)
+      services:
+        - kind: Service
+          name: wordpress-cn27
+          port: 80
+  tls:
+    secretName: wordpress-cn27-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wordpress-cn27-cert
+  namespace: wordpress
+spec:
+  secretName: wordpress-cn27-tls
+  dnsNames:
+    - "cn27.cngei.it"
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer
