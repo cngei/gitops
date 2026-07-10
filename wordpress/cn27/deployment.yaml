@@ -73,23 +73,10 @@ spec:
           volumeMounts:
             - name: wordpress-cn27-data
               mountPath: /var/www/html
-            - name: wordpress-old-data
-              mountPath: /old
-              readOnly: true
-            - name: apache-config
-              mountPath: /etc/apache2/conf-enabled/force-https.conf
-              subPath: force-https.conf
-              readOnly: true
       volumes:
         - name: wordpress-cn27-data
           persistentVolumeClaim:
             claimName: wordpress-cn27-pvc
-        - name: wordpress-old-data
-          persistentVolumeClaim:
-            claimName: wordpress-pvc
-        - name: apache-config
-          configMap:
-            name: wordpress-cn27-apache-config
 ---
 apiVersion: v1
 kind: Service
