@@ -1,0 +1,33 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: db-cn27
+  namespace: wordpress
+spec:
+  mariaDbRef:
+    name: wordpress-multi-mariadb
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: user-cn27
+  namespace: wordpress
+spec:
+  mariaDbRef:
+    name: wordpress-multi-mariadb
+  passwordSecretKeyRef:
+    name: wordpress-cn27-mariadb-password
+    key: password
+  maxUserConnections: 0
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: grant-cn27
+spec:
+  mariaDbRef:
+    name: wordpress-multi-mariadb
+  privileges:
+    - ALL PRIVILEGES
+  database: db-cn27
+  username: user-cn27

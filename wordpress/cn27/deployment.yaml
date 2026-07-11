@@ -7,7 +7,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
-  numberOfReplicas: "3"
+  numberOfReplicas: "1"
   staleReplicaTimeout: "480"
 allowedTopologies:
   - matchLabelExpressions:
@@ -52,16 +52,16 @@ spec:
             - containerPort: 80
           env:
             - name: WORDPRESS_DB_HOST
-              value: wordpress-mariadb.wordpress.svc.cluster.local:3306
+              value: wordpress-multi-mariadb.wordpress.svc.cluster.local:3306
             - name: WORDPRESS_DB_USER
-              value: wordpress_cn27
+              value: user-cn27
             - name: WORDPRESS_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: wordpress-mariadb-password
+                  name: wordpress-cn27-mariadb-password
                   key: password
             - name: WORDPRESS_DB_NAME
-              value: wordpress_cn27
+              value: db-cn27
             - name: HTTPS
               value: "on"
             - name: WORDPRESS_CONFIG_EXTRA

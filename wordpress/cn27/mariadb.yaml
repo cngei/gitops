@@ -13,10 +13,10 @@ spec:
     storageClassName: longhorn-wordpress
   metrics:
     enabled: false
-  replicas: 2
-  replicasAllowEvenNumber: true
-  replication:
-    enabled: true
+  replicas: 1
+#  replicasAllowEvenNumber: true
+#  replication:
+#    enabled: true
   primaryService:
     type: ClusterIP
   secondaryService:
