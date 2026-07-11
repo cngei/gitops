@@ -10,7 +10,7 @@ spec:
   port: 3306
   storage:
     size: 10Gi
-    storageClassName: longhorn-wordpress
+    storageClassName: longhorn-multi-wordpress
   metrics:
     enabled: false
   replicas: 1
