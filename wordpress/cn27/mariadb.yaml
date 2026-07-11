@@ -1,23 +1,24 @@
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: MariaDB
 metadata:
-  name: wordpress-cn27-mariadb
+  name: wordpress-multi-mariadb
   namespace: wordpress
 spec:
   rootPasswordSecretKeyRef:
-    name: wordpress-mariadb-root-password
+    name: wordpress-multi-root-password
     key: password
-  username: wordpress_cn27
-  passwordSecretKeyRef:
-    name: wordpress-cn27-mariadb-password
-    key: password
-  database: wordpress_cn27
   port: 3306
   storage:
-    size: 2Gi
+    size: 10Gi
     storageClassName: longhorn-wordpress
   metrics:
     enabled: false
-  replicas: 1
+  replicas: 2
+  replication:
+    enabled: true
+  primaryService:
+    type: ClusterIP
+  secondaryService:
+    type: ClusterIP
   nodeSelector:
     node-role.kubernetes.io/worker: wordpress
