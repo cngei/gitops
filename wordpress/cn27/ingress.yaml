@@ -1,4 +1,32 @@
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https-cn27
+  namespace: wordpress
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-cn27-http-ingress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`cn27.cngei.it`)
+      middlewares:
+        - name: redirect-https-cn27
+      services:
+        - kind: Service
+          name: wordpress-cn27
+          port: 80
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: wordpress-cn27-ingress
