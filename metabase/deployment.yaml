@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: metabase
-          image: metabase/metabase:v0.60.2
+          image: metabase/metabase:v0.63.5
           ports:
             - containerPort: 3000
               name: http
