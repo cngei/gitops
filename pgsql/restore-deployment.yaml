@@ -7,7 +7,8 @@
 # SQL sessions default to read-only for inspecting/exporting recovered data.
 #
 # Apply: kubectl apply -f pgsql/restore-deployment.yaml
-# Connect: kubectl -n db port-forward service/postgres-restore 5433:5432
+# Connect: any reachable cluster node IP on port 30433.
+# Optional local access: kubectl -n db port-forward service/postgres-restore 5433:5432
 # Use an existing database user/password from the backed-up cluster.
 # Local superuser access: kubectl -n db exec deploy/postgres-restore -- psql -h /tmp -U postgres -d prod
 apiVersion: v1
@@ -183,10 +184,11 @@ metadata:
   name: postgres-restore
   namespace: db
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: postgres-restore
   ports:
     - name: postgres
       port: 5432
       targetPort: postgres
+      nodePort: 30433
