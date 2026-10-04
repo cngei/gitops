@@ -1,5 +1,7 @@
 # Standalone recovery of a CNPG PostgreSQL 17 Longhorn volume clone.
-# The restored PVC must already exist as db/pvc-db-restore.
+# The existing Longhorn volume is pvc-db-restore (30Gi, ext4).
+# This manifest creates its static PV and the db/pvc-db-restore PVC.
+# If it is a Longhorn DR volume, activate it before mounting it here.
 # CNPG stores PGDATA in the pgdata subdirectory of the data volume.
 # PostgreSQL performs crash recovery and writes to this restored clone.
 # SQL sessions default to read-only for inspecting/exporting recovered data.
@@ -8,6 +10,44 @@
 # Connect: kubectl -n db port-forward service/postgres-restore 5433:5432
 # Use an existing database user/password from the backed-up cluster.
 # Local superuser access: kubectl -n db exec deploy/postgres-restore -- psql -h /tmp -U postgres -d prod
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-restore-pv
+spec:
+  capacity:
+    storage: 30Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  # Keep the restored Longhorn volume when recovery resources are removed.
+  persistentVolumeReclaimPolicy: Retain
+  # An explicit empty class disables dynamic provisioning/default classes.
+  storageClassName: ""
+  claimRef:
+    name: pvc-db-restore
+    namespace: db
+  csi:
+    driver: driver.longhorn.io
+    fsType: ext4
+    # This is the existing Longhorn volume name, not a newly provisioned volume.
+    volumeHandle: pvc-db-restore
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-db-restore
+  namespace: db
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  storageClassName: ""
+  volumeName: postgres-restore-pv
+  resources:
+    requests:
+      storage: 30Gi
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
