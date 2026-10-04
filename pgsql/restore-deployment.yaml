@@ -1,0 +1,152 @@
+# Standalone recovery of a CNPG PostgreSQL 17 Longhorn volume clone.
+# The restored PVC must already exist as db/pvc-db-restore.
+# CNPG stores PGDATA in the pgdata subdirectory of the data volume.
+# PostgreSQL performs crash recovery and writes to this restored clone.
+# SQL sessions default to read-only for inspecting/exporting recovered data.
+#
+# Apply: kubectl apply -f pgsql/restore-deployment.yaml
+# Connect: kubectl -n db port-forward service/postgres-restore 5433:5432
+# Use an existing database user/password from the backed-up cluster.
+# Local superuser access: kubectl -n db exec deploy/postgres-restore -- psql -h /tmp -U postgres -d prod
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-restore-config
+  namespace: db
+data:
+  postgresql.conf: |
+    max_connections = 200
+    shared_buffers = '128MB'
+    logging_collector = off
+  pg_hba.conf: |
+    local all all peer
+    host all all 0.0.0.0/0 scram-sha-256
+    host all all ::/0 scram-sha-256
+  pg_ident.conf: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-restore
+  namespace: db
+  labels:
+    app: postgres-restore
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres-restore
+  template:
+    metadata:
+      labels:
+        app: postgres-restore
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 26
+        runAsGroup: 26
+        fsGroup: 26
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: postgres
+          image: ghcr.io/cloudnative-pg/postgresql:17
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ ! -s "$PGDATA/PG_VERSION" ]; then
+                echo "No restored PostgreSQL data at $PGDATA; refusing to initialize a new database." >&2
+                exit 1
+              fi
+              data_major=$(cat "$PGDATA/PG_VERSION")
+              binary_major=$(postgres --version | awk '{print $3}' | cut -d . -f 1)
+              if [ "$data_major" != "$binary_major" ]; then
+                echo "PostgreSQL version mismatch: restored data is $data_major, image is $binary_major." >&2
+                exit 1
+              fi
+
+              # These belong to the offline clone, not a running CNPG instance.
+              # A standby-volume clone must recover independently of the original cluster.
+              rm -f "$PGDATA/postmaster.pid" "$PGDATA/standby.signal" "$PGDATA/recovery.signal"
+
+              # Supply standalone configuration: CNPG certificate/controller files
+              # are not mounted here. Command-line options override auto.conf too.
+              exec postgres -D "$PGDATA" \
+                -c config_file=/etc/postgresql-restore/postgresql.conf \
+                -c hba_file=/etc/postgresql-restore/pg_hba.conf \
+                -c ident_file=/etc/postgresql-restore/pg_ident.conf \
+                -c listen_addresses='*' \
+                -c port=5432 \
+                -c unix_socket_directories=/tmp \
+                -c ssl=off \
+                -c archive_mode=off \
+                -c archive_command= \
+                -c restore_command= \
+                -c primary_conninfo= \
+                -c primary_slot_name= \
+                -c synchronous_standby_names= \
+                -c shared_preload_libraries= \
+                -c default_transaction_read_only=on
+          ports:
+            - name: postgres
+              containerPort: 5432
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          # No liveness probe: allow crash recovery to finish without restarting it.
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -h
+                - /tmp
+                - -U
+                - postgres
+                - -d
+                - postgres
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /etc/postgresql-restore
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-db-restore
+        - name: config
+          configMap:
+            name: postgres-restore-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-restore
+  namespace: db
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-restore
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
