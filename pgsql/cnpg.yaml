@@ -116,6 +116,12 @@ spec:
           - pg_signal_backend
         passwordSecret:
           name: pg-cluster-metabase-credentials
+      - name: moodle
+        ensure: present
+        login: true
+        superuser: false
+        passwordSecret:
+          name: pg-cluster-moodle-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database

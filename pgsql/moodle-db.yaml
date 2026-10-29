@@ -1,0 +1,10 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: pg-cluster-moodle
+  namespace: db
+spec:
+  name: moodle
+  owner: moodle
+  cluster:
+    name: pg-cluster
