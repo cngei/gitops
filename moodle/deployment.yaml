@@ -89,12 +89,8 @@ spec:
             - name: local
               mountPath: /var/www/html
               subPath: html
-            - name: local
-              mountPath: /var/www/moodledata
-              subPath: data
-            # Validate Moodle's file and trash operations on this mount before rollout.
             - name: filedir
-              mountPath: /var/www/moodledata/filedir
+              mountPath: /var/www/moodledata
       volumes:
         - name: local
           persistentVolumeClaim:
