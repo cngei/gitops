@@ -4,7 +4,6 @@ metadata:
   name: moodle
   namespace: moodle
 spec:
-  # Enable only after testing the S3 filesystem and provisioning the secrets.
   replicas: 1
   strategy:
     type: Recreate
@@ -56,21 +55,6 @@ spec:
                 secretKeyRef:
                   name: pg-cluster-moodle-credentials
                   key: password
-            - name: MOODLE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: moodle-admin
-                  key: username
-            - name: MOODLE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: moodle-admin
-                  key: password
-            - name: MOODLE_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: moodle-admin
-                  key: email
             - name: MOODLE_SITENAME
               value: CNGEI Moodle
             - name: RUN_CRON_TASKS
