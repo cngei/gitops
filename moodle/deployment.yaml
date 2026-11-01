@@ -30,7 +30,7 @@ spec:
               mountPath: /storage
       containers:
         - name: moodle
-          image: erseco/alpine-moodle:v5.2.4
+          image: erseco/alpine-moodle:v5.3.0
           ports:
             - name: http
               containerPort: 8080
