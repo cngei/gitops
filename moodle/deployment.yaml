@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moodle
+  namespace: moodle
+spec:
+  # Enable only after testing the S3 filesystem and provisioning the secrets.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: moodle
+  template:
+    metadata:
+      labels:
+        app: moodle
+    spec:
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: prepare-local-storage
+          image: busybox:1.36.1
+          command: ["sh", "-c", "mkdir -p /storage/html /storage/data && chmod 770 /storage/html /storage/data"]
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+          volumeMounts:
+            - name: local
+              mountPath: /storage
+      containers:
+        - name: moodle
+          image: erseco/alpine-moodle:v5.2.4
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SITE_URL
+              value: https://moodle.cngei.it
+            - name: SSLPROXY
+              value: "true"
+            - name: DB_TYPE
+              value: pgsql
+            - name: DB_HOST
+              value: pg-cluster-rw.db.svc.cluster.local
+            - name: DB_NAME
+              value: moodle
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-moodle-credentials
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-moodle-credentials
+                  key: password
+            - name: MOODLE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: moodle-admin
+                  key: username
+            - name: MOODLE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: moodle-admin
+                  key: password
+            - name: MOODLE_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: moodle-admin
+                  key: email
+            - name: MOODLE_SITENAME
+              value: CNGEI Moodle
+            - name: RUN_CRON_TASKS
+              value: "true"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /login/index.php
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: moodle.cngei.it
+                - name: X-Forwarded-Proto
+                  value: https
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          volumeMounts:
+            - name: local
+              mountPath: /var/www/html
+              subPath: html
+            - name: local
+              mountPath: /var/www/moodledata
+              subPath: data
+            # Validate Moodle's file and trash operations on this mount before rollout.
+            - name: filedir
+              mountPath: /var/www/moodledata/filedir
+      volumes:
+        - name: local
+          persistentVolumeClaim:
+            claimName: moodle-local
+        - name: filedir
+          persistentVolumeClaim:
+            claimName: moodle-s3

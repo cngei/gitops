@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: moodle-s3
+spec:
+  # Kubernetes requires a capacity for binding; this is not an S3 quota.
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: moodle
+    name: moodle-s3
+  csi:
+    driver: ru.yandex.s3.csi
+    volumeHandle: cngeimoodledata
+    controllerPublishSecretRef:
+      name: moodle-s3-credentials
+      namespace: moodle
+    nodePublishSecretRef:
+      name: moodle-s3-credentials
+      namespace: moodle
+    nodeStageSecretRef:
+      name: moodle-s3-credentials
+      namespace: moodle
+    volumeAttributes:
+      capacity: 1Ti
+      mounter: geesefs
+      options: "--memory-limit 1000 --uid 65534 --gid 65534 --dir-mode 0770 --file-mode 0660"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moodle-s3
+  namespace: moodle
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: moodle-s3
+  resources:
+    requests:
+      storage: 1Ti
