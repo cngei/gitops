@@ -1,0 +1,337 @@
+{{- $root := . -}}
+{{- $seen := dict -}}
+{{- range $entry := .Values.sites }}
+{{- $site := dict -}}
+{{- if kindIs "string" $entry -}}
+  {{- $_ := set $site "domain" $entry -}}
+{{- else -}}
+  {{- $site = $entry -}}
+{{- end -}}
+{{- $domain := required "Every site requires a domain" $site.domain -}}
+{{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.cngei\\.it$" $domain) -}}
+  {{- fail (printf "Invalid domain %q: expected a single DNS label followed by .cngei.it" $domain) -}}
+{{- end -}}
+{{- if hasKey $seen $domain -}}{{- fail (printf "Duplicate domain: %s" $domain) -}}{{- end -}}
+{{- $_ := set $seen $domain true -}}
+{{- $slug := trimSuffix ".cngei.it" $domain -}}
+{{- $name := include "wordpress-clones.name" $slug -}}
+{{- $secret := printf "%s-wordpress-secret" $slug -}}
+{{- $persistence := mergeOverwrite (deepCopy $root.Values.persistence) (default dict $site.persistence) -}}
+{{- $database := default dict $site.database -}}
+{{- $defaultDb := printf "wp_%s" (replace "-" "_" $slug) -}}
+{{- if gt (len $defaultDb) 64 -}}
+  {{- $defaultDb = printf "%s_%s" ($defaultDb | trunc 55) ($slug | sha256sum | trunc 8) -}}
+{{- end -}}
+{{- $dbName := default $defaultDb $database.name -}}
+{{- $dbUser := default $defaultDb $database.username -}}
+{{- if not (regexMatch "^[a-zA-Z0-9_]{1,64}$" $dbName) -}}{{- fail (printf "Invalid database name for %s" $domain) -}}{{- end -}}
+{{- if not (regexMatch "^[a-zA-Z0-9_]{1,80}$" $dbUser) -}}{{- fail (printf "Invalid database username for %s" $domain) -}}{{- end -}}
+{{- if hasKey $seen (printf "db:%s" $dbName) -}}{{- fail (printf "Duplicate database name: %s" $dbName) -}}{{- end -}}
+{{- if hasKey $seen (printf "user:%s" $dbUser) -}}{{- fail (printf "Duplicate database user: %s" $dbUser) -}}{{- end -}}
+{{- $_ := set $seen (printf "db:%s" $dbName) true -}}
+{{- $_ := set $seen (printf "user:%s" $dbUser) true -}}
+{{ printf "\n---\n" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" $root | nindent 4 }}
+    cngei.it/site: {{ $slug | quote }}
+  {{- if $persistence.keep }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml $persistence.accessModes | nindent 4 }}
+  {{- if ne $persistence.storageClass nil }}
+  storageClassName: {{ $persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $persistence.size | quote }}
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" $root | nindent 4 }}
+  {{- if $root.Values.mariadb.keepResources }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  mariaDbRef:
+    name: {{ $root.Values.mariadb.name }}
+    waitForIt: true
+  name: {{ $dbName | quote }}
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+  cleanupPolicy: {{ $root.Values.mariadb.cleanupPolicy }}
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" $root | nindent 4 }}
+  {{- if $root.Values.mariadb.keepResources }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  mariaDbRef:
+    name: {{ $root.Values.mariadb.name }}
+    waitForIt: true
+  name: {{ $dbUser | quote }}
+  host: "%"
+  passwordSecretKeyRef:
+    name: {{ $secret }}
+    key: WORDPRESS_DB_PASSWORD
+  maxUserConnections: 0
+  cleanupPolicy: {{ $root.Values.mariadb.cleanupPolicy }}
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" $root | nindent 4 }}
+  {{- if $root.Values.mariadb.keepResources }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  mariaDbRef:
+    name: {{ $root.Values.mariadb.name }}
+    waitForIt: true
+  privileges:
+    - ALL PRIVILEGES
+  database: {{ $dbName | quote }}
+  table: "*"
+  username: {{ $dbUser | quote }}
+  host: "%"
+  grantOption: false
+  cleanupPolicy: {{ $root.Values.mariadb.cleanupPolicy }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" $root | nindent 4 }}
+    cngei.it/site: {{ $slug | quote }}
+spec:
+  replicas: 1
+  # RWO storage and mutable WordPress files require a single writer.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $root.Release.Name | quote }}
+      cngei.it/site: {{ $slug | quote }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wordpress-clones
+        app.kubernetes.io/instance: {{ $root.Release.Name | quote }}
+        cngei.it/site: {{ $slug | quote }}
+      annotations:
+        cngei.it/secret-revision: {{ default "1" $site.secretRevision | quote }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: wordpress
+          image: {{ printf "%s:%s" $root.Values.image.repository $root.Values.image.tag | quote }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+          envFrom:
+            - secretRef:
+                name: {{ $secret }}
+          env:
+            - name: CLONE_EXPECTED_SITE_URL
+              value: {{ printf "https://%s" $domain | quote }}
+            - name: CLONE_EXPECTED_DB_NAME
+              value: {{ $dbName | quote }}
+            - name: CLONE_EXPECTED_DB_USER
+              value: {{ $dbUser | quote }}
+            - name: WORDPRESS_DISABLE_WP_CRON
+              value: {{ $root.Values.cron.enabled | quote }}
+          resources:
+            {{- toYaml (mergeOverwrite (deepCopy $root.Values.resources) (default dict $site.resources)) | nindent 12 }}
+          startupProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: {{ $root.Values.probes.startup.failureThreshold }}
+            periodSeconds: {{ $root.Values.probes.startup.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /wp-login.php
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ $domain | quote }}
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+            failureThreshold: 6
+          volumeMounts:
+            - name: wordpress
+              mountPath: /var/www/html
+      volumes:
+        - name: wordpress
+          persistentVolumeClaim:
+            claimName: {{ $name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" $root | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ $root.Release.Name | quote }}
+    cngei.it/site: {{ $slug | quote }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $name }}-https
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name }}-http
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ $root.Values.ingress.entryPoints.http }}
+  routes:
+    - kind: Rule
+      match: {{ printf "Host(`%s`)" $domain | quote }}
+      middlewares:
+        - name: {{ $name }}-https
+      services:
+        - name: {{ $name }}
+          port: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name }}-https
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ $root.Values.ingress.entryPoints.https }}
+  routes:
+    - kind: Rule
+      match: {{ printf "Host(`%s`)" $domain | quote }}
+      services:
+        - name: {{ $name }}
+          port: 80
+  tls:
+    secretName: {{ $name }}-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  secretName: {{ $name }}-tls
+  dnsNames:
+    - {{ $domain | quote }}
+  issuerRef:
+    {{- toYaml $root.Values.certificate.issuerRef | nindent 4 }}
+{{- if $root.Values.cron.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $name }}-cron
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  schedule: {{ $root.Values.cron.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  startingDeadlineSeconds: 120
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 240
+      template:
+        spec:
+          automountServiceAccountToken: false
+          {{- with $root.Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: wp-cron
+              image: {{ $root.Values.cron.image | quote }}
+              args:
+                - --fail
+                - --silent
+                - --show-error
+                - --max-time
+                - "230"
+                - --header
+                - {{ printf "Host: %s" $domain | quote }}
+                - {{ printf "http://%s/wp-cron.php" $name | quote }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                {{- toYaml $root.Values.cron.resources | nindent 16 }}
+{{- end }}
+{{- end }}
+

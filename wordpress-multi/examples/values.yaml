@@ -1,0 +1,16 @@
+image:
+  repository: ghcr.io/cngei/sezioni-wp
+  tag: "85a56f85791f66274c625f060b3ca8bc41a390b4"
+
+# Matches wordpress/cn27 in the reference GitOps repository.
+nodeSelector:
+  node-role.kubernetes.io/worker: wordpress
+
+sites:
+  - domain: cn27.cngei.it
+    persistence:
+      size: 2Gi
+  - domain: roma.cngei.it
+    persistence:
+      size: 5Gi
+
