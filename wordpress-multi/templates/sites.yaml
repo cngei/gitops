@@ -311,6 +311,9 @@ spec:
           restartPolicy: Never
           securityContext:
             runAsNonRoot: true
+            # Numeric identity of curl_user in curlimages/curl.
+            runAsUser: 100
+            runAsGroup: 101
             seccompProfile:
               type: RuntimeDefault
           containers:
