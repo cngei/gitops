@@ -109,3 +109,5 @@ vaultwarden:
 sites:
   - domain: aosta.cngei.it
     adminEmail: paolo.campanelli@cngei.it
+  - domain: arenzano.cngei.it
+    adminEmail: arenzano@cngei.it
