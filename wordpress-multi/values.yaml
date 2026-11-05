@@ -63,7 +63,7 @@ externalSecrets:
   keep: true
   databaseHost: "" # Defaults to <mariadb.name>.<namespace>.svc.cluster.local:3306.
   password:
-    length: 16
+    length: 32
     digits: 4
     symbols: 0
     noUpper: false
