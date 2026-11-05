@@ -105,48 +105,203 @@
     "sites": {
       "type": "array",
       "items": {
-        "oneOf": [
-          {
+        "type": "object",
+        "required": [
+          "domain",
+          "adminEmail"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.cngei\\.it$"
+          },
+          "persistence": {
+            "$ref": "#/definitions/persistence"
+          },
+          "database": {
             "type": "object",
-            "required": [
-              "domain"
-            ],
             "additionalProperties": false,
             "properties": {
-              "domain": {
+              "name": {
                 "type": "string",
-                "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.cngei\\.it$"
+                "pattern": "^[a-zA-Z0-9_]{1,64}$"
               },
-              "persistence": {
-                "$ref": "#/definitions/persistence"
-              },
-              "database": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "pattern": "^[a-zA-Z0-9_]{1,64}$"
-                  },
-                  "username": {
-                    "type": "string",
-                    "pattern": "^[a-zA-Z0-9_]{1,80}$"
-                  }
-                }
-              },
-              "secretRevision": {
-                "type": "string"
-              },
-              "resources": {
-                "type": "object"
+              "username": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_]{1,80}$"
               }
             }
           },
-          {
+          "secretRevision": {
+            "type": "string"
+          },
+          "resources": {
+            "type": "object"
+          },
+          "adminEmail": {
             "type": "string",
-            "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.cngei\\.it$"
+            "minLength": 1,
+            "format": "email"
+          },
+          "adminUsername": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.@ -]{1,60}$"
+          },
+          "siteTitle": {
+            "type": "string"
+          },
+          "extraEnv": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+              "type": "string"
+            }
           }
-        ]
+        }
+      }
+    },
+    "externalSecrets": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "apiVersion": {
+          "enum": [
+            "external-secrets.io/v1",
+            "external-secrets.io/v1beta1"
+          ]
+        },
+        "keep": {
+          "type": "boolean"
+        },
+        "databaseHost": {
+          "type": "string"
+        },
+        "password": {
+          "type": "object",
+          "properties": {
+            "length": {
+              "type": "integer",
+              "minimum": 32,
+              "maximum": 128
+            },
+            "digits": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "symbols": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "allowRepeat": {
+              "type": "boolean"
+            },
+            "noUpper": {
+              "type": "boolean"
+            }
+          }
+        },
+        "extraEnv": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "pushSecret": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "apiVersion": {
+              "const": "external-secrets.io/v1alpha1"
+            },
+            "refreshInterval": {
+              "type": "string",
+              "minLength": 1
+            },
+            "secretStoreRef": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "SecretStore",
+                    "ClusterSecretStore"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "kind"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "pushSecret"
+      ]
+    },
+    "vaultwarden": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "server": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "credentialsSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cliImage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bridgeImage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "itemNamePrefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "organizationId": {
+          "type": "string"
+        },
+        "collectionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "folderId": {
+          "type": "string"
+        },
+        "externalSecretsNamespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "externalSecretsPodSelector": {
+          "type": "object",
+          "properties": {},
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "resources": {
+          "type": "object"
+        }
       }
     }
   }

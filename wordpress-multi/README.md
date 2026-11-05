@@ -4,6 +4,9 @@
 
 Prerequisites in the target cluster:
 
+- External Secrets Operator serving `external-secrets.io/v1` ExternalSecrets,
+  `external-secrets.io/v1alpha1` PushSecrets, Password generators, and a write-capable
+  webhook provider. ESO must have its PushSecret controller enabled.
 - MariaDB Operator and its Database, User and Grant CRDs.
 - An existing `wordpress-multi-mariadb` MariaDB resource. Deploy the chart in
   the **same namespace** as this resource (`wordpress` in the reference repo).
@@ -18,8 +21,9 @@ in `wordpress-multi/values.yaml` and can be overridden through Helm values.
 1. The chart pins `ghcr.io/cngei/sezioni-wp` to
    `85a56f85791f66274c625f060b3ca8bc41a390b4`. Review the site list in
    `wordpress-multi/examples/values.yaml` and configure `imagePullSecrets` if required.
-2. Create an externally managed Secret for every site. See
-   `wordpress-multi/examples/site-secret.yaml.example`; the chart never creates credentials.
+2. Set the mandatory `adminEmail` for every site and prepare the one-time
+   Vaultwarden bridge credentials described below. ESO generates each site's
+   `<subdomain>-wordpress-secret` automatically.
 3. Render and install:
 
 ```sh
@@ -30,22 +34,29 @@ helm upgrade --install clones wordpress-multi --namespace wordpress \
   -f wordpress-multi/examples/values.yaml
 ```
 
-The minimal site list accepts strings:
+Every site must be an object with a domain and a non-empty, valid `adminEmail`:
 
 ```yaml
 sites:
-  - cn27.cngei.it
-  - roma.cngei.it
+  - domain: cn27.cngei.it
+    adminEmail: cn27-admin@example.com
+  - domain: roma.cngei.it
+    adminEmail: roma-admin@example.com
 ```
+
+There is no global email fallback. The configured Aosta address is
+`paolo.campanelli@cngei.it`.
 
 Use objects for overrides:
 
 ```yaml
 sites:
   - domain: cn27.cngei.it
+    adminEmail: cn27-admin@example.com
     persistence:
       size: 2Gi
   - domain: roma.cngei.it
+    adminEmail: roma-admin@example.com
     persistence:
       size: 5Gi
       storageClass: longhorn-multi-wordpress
@@ -59,7 +70,10 @@ Only single-label subdomains of `cngei.it` are accepted. Duplicate domains,
 database names and database usernames are rejected. For each site, the chart
 creates a PVC (default **2Gi**), one-replica Deployment, ClusterIP Service,
 HTTP-to-HTTPS Middleware and IngressRoute, HTTPS IngressRoute, Certificate,
-MariaDB Database/User/Grant, and a WordPress cron CronJob.
+MariaDB Database/User/Grant, and a WordPress cron CronJob. With default secret
+management, each site also gets two Password generators, an ExternalSecret,
+and a PushSecret. One shared Vaultwarden bridge, namespaced SecretStore,
+auth-token generator/ExternalSecret and NetworkPolicy are created per release.
 
 Database names and usernames default to `wp_<subdomain>` with hyphens converted
 to underscores. For example, `reggio-emilia.cngei.it` uses `wp_reggio_emilia`.
@@ -70,11 +84,99 @@ SHA-256 of the original subdomain. Explicit `database.name` and
 unique across all releases sharing the MariaDB cluster. Deploy a domain through
 only one release.
 
+### Generated credentials and Vaultwarden backup
+
+ESO independently generates 40-character database and administrator passwords
+for each site. `externalSecrets.password` controls the generator policy. The
+ExternalSecret combines these with the domain, database identity and mandatory
+site email into the existing `<subdomain>-wordpress-secret` contract. Optional
+site fields are `adminUsername` (default `<subdomain>-admin`) and `siteTitle`
+(default `CNGEI <subdomain>`). `externalSecrets.databaseHost` overrides the derived
+MariaDB service address. Extra environment settings can be supplied through
+`externalSecrets.extraEnv` or `sites[].extraEnv`; protected generated fields
+cannot be replaced through these maps.
+
+The ExternalSecrets use `refreshPolicy: CreatedOnce`, `immutable: true`, and
+`creationPolicy: Orphan`. Helm also retains them by default. The passwords and
+configuration are generated once, survive upgrades and uninstall, and are not
+silently rotated when an ExternalSecret is recreated. An existing manually
+created target Secret is retained with its current data and made immutable;
+make sure it already contains all required fields before enabling generation.
+Existing credentials/settings are not overwritten by changed Helm values.
+To change them later, preserve the current passwords from Vaultwarden, replace
+the Secret deliberately with the updated full data, reconcile the MariaDB user
+if its password changed, and restart the WordPress Deployment. Do not delete a
+live site's Secret to request a routine refresh: a missing Secret is generated
+again with new passwords.
+
+Each PushSecret sends the complete Secret as a JSON string map to the shared
+bridge. The bridge saves a login item named `Kubernetes WordPress: <domain>`:
+its login is the WordPress administrator, its URI points to `/wp-admin/`, its
+custom fields include the database connection and password, and its notes hold
+a JSON recovery copy of every environment key. Repeated pushes update the same
+managed item, skip unchanged data, and reject ambiguous names or manually
+created items with the same name. Removing the PushSecret retains the item in
+Vaultwarden (`deletionPolicy: None`). The push is a backup; Vaultwarden is not
+automatically used to recover a deleted Kubernetes Secret.
+
+The bridge uses Bitwarden Password Manager's CLI API, which supports Vaultwarden.
+It does not use the separate Bitwarden Secrets Manager product. The CLI image
+is pinned to `2026.10.1` and binds its unlocked API to loopback inside the pod.
+Only the authenticated adapter on port 8080 is exposed through a ClusterIP
+Service. Its token is generated by ESO, and the NetworkPolicy admits only the
+ESO controller's namespace and pod labels. Set
+`vaultwarden.externalSecretsNamespace` and
+`vaultwarden.externalSecretsPodSelector` to match your installed controller.
+The internal HTTP connection uses this bearer token; the CLI connects to
+`https://password.cngei.it` over TLS.
+
+Create a dedicated Vaultwarden account for this integration, enable its personal
+API key, and prepare three files in a private directory outside the repository:
+`client-id`, `client-secret`, and `master-password`. Create the bootstrap Secret
+in the chart's namespace before installing:
+
+```sh
+kubectl -n wordpress create secret generic wordpress-vaultwarden-credentials \
+  --from-file=client-id=/secure/vaultwarden/client-id \
+  --from-file=client-secret=/secure/vaultwarden/client-secret \
+  --from-file=master-password=/secure/vaultwarden/master-password
+```
+
+The Secret name is configurable with `vaultwarden.credentialsSecret`. These
+bootstrap values cannot be generated by ESO: they authenticate an existing vault
+account. Store files privately and keep actual credentials out of Helm values
+and Git. By default, entries belong to that account's personal vault. To put
+entries in a shared organization, set `vaultwarden.organizationId` and one or
+more `vaultwarden.collectionIds`; the account must be allowed to create and
+edit items in those collections. `vaultwarden.folderId` optionally selects a
+folder. The bridge has no Kubernetes API access.
+
+For an existing external push store, disable `vaultwarden.enabled` and configure
+`externalSecrets.pushSecret.secretStoreRef.name` and `.kind`. This replaces the
+built-in bridge/store with the selected provider. To retain entirely manual
+credential management, disable `externalSecrets.enabled`; to disable backup,
+set `externalSecrets.pushSecret.enabled=false`. The manual Secret shape remains
+in `wordpress-multi/examples/site-secret.yaml.example`.
+
+Inspect reconciliation without printing credentials:
+
+```sh
+kubectl -n wordpress get externalsecret,pushsecret,secretstore
+kubectl -n wordpress get deployments
+```
+
+Source references:
+[ESO Password generator](https://external-secrets.io/latest/api/generator/password/),
+[ExternalSecret lifecycle](https://external-secrets.io/main/api/externalsecret/),
+[webhook push protocol](https://external-secrets.io/main/provider/webhook/), and
+[Bitwarden Vault Management API](https://bitwarden.com/help/bitwarden-apis/).
+
 ### Secret contract
 
 For `cn27.cngei.it`, the Secret must be named **`cn27-wordpress-secret`**, in the
 release namespace. All per-site credentials/settings are loaded with `envFrom`.
 The MariaDB User resource reads `WORDPRESS_DB_PASSWORD` from that same Secret.
+ESO creates this Secret by default; create it manually only when generation is disabled.
 
 | Secret key | Required | Meaning |
 | --- | --- | --- |
@@ -98,8 +200,8 @@ mismatched Secret from initializing the wrong database. Database host values
 support DNS names or IPv4 addresses, with an optional port, rather than Unix
 sockets or IPv6 literals.
 
-After changing a Secret, increment that site's `secretRevision` and sync/upgrade
-the release, or restart its Deployment. Environment variables are read at pod
+After deliberately replacing a Secret, increment that site's `secretRevision`
+and sync/upgrade the release, or restart its Deployment. Environment variables are read at pod
 creation. Database password rotation also requires the operator to reconcile its
 User resource; the application waits for the new credentials to work.
 
@@ -160,6 +262,11 @@ shrinking an existing PVC is not supported by Kubernetes.
 ```sh
 helm lint wordpress-multi -f wordpress-multi/examples/values.yaml
 python3 wordpress-multi/tests/test_chart.py
+python3 wordpress-multi/tests/test_vaultwarden_bridge.py
 ```
 
 Run the commands above from the GitOps repository root.
+
+The HTTP bridge tests use a local Bitwarden API simulator and verify authentication,
+key scoping, idempotent retries, updates, recovery payloads, conflicts and sanitized
+errors. They do not log into the production Vaultwarden instance.

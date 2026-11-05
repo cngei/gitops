@@ -1,0 +1,271 @@
+{{- if and .Values.externalSecrets.pushSecret.enabled .Values.vaultwarden.enabled -}}
+{{- $name := include "wordpress-clones.vaultwardenName" . -}}
+{{- $domains := list -}}
+{{- range .Values.sites -}}{{- $domains = append $domains .domain -}}{{- end -}}
+{{- if and .Values.vaultwarden.organizationId (not .Values.vaultwarden.collectionIds) -}}
+{{- fail "vaultwarden.collectionIds must be set when organizationId is configured" -}}
+{{- end }}
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: {{ $name }}-token
+  namespace: {{ .Release.Namespace }}
+spec:
+  length: 48
+  digits: 12
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
+apiVersion: {{ .Values.externalSecrets.apiVersion }}
+kind: ExternalSecret
+metadata:
+  name: {{ $name }}-auth
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.externalSecrets.keep }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  refreshPolicy: CreatedOnce
+  target:
+    name: {{ $name }}-auth
+    creationPolicy: Orphan
+    deletionPolicy: Retain
+    immutable: true
+    template:
+      engineVersion: v2
+      metadata:
+        labels:
+          external-secrets.io/type: webhook
+      data:
+        token: {{ "{{ .password }}" | quote }}
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: {{ $name }}-token
+---
+apiVersion: {{ .Values.externalSecrets.apiVersion }}
+kind: SecretStore
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  provider:
+    webhook:
+      # Accommodate both PushSecret's remoteKey and an existence check's key.
+      url: {{ printf `http://%s.%s.svc.cluster.local:8080/items?key={{ or (index .remoteRef "remoteKey") (index .remoteRef "key") }}` $name .Release.Namespace | quote }}
+      method: POST
+      body: {{ `{{ if index .remoteRef "remoteKey" }}{{ index .remoteRef (index .remoteRef "remoteKey") }}{{ else }}{}{{ end }}` | quote }}
+      timeout: 90s
+      result:
+        jsonPath: $.data
+      headers:
+        Content-Type: application/json
+        Authorization: {{ "Bearer {{ .auth.token }}" | quote }}
+      secrets:
+        - name: auth
+          secretRef:
+            name: {{ $name }}-auth
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+data:
+  bridge.py: |
+    {{- .Files.Get "files/vaultwarden_bridge.py" | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "wordpress-clones.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: vaultwarden-bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/component: vaultwarden-bridge
+      annotations:
+        checksum/bridge: {{ .Files.Get "files/vaultwarden_bridge.py" | sha256sum }}
+        checksum/config: {{ toJson .Values.vaultwarden | sha256sum }}
+        checksum/sites: {{ toJson $domains | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bitwarden-cli
+          image: {{ .Values.vaultwarden.cliImage | quote }}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              bw config server "$BW_HOST" > /dev/null
+              bw login --apikey > /dev/null
+              BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
+              export BW_SESSION
+              exec bw serve --hostname 127.0.0.1 --port 8087
+          env:
+            - name: BW_HOST
+              value: {{ .Values.vaultwarden.server | quote }}
+            - name: BITWARDENCLI_APPDATA_DIR
+              value: /data
+            - name: BW_CLIENTID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vaultwarden.credentialsSecret }}
+                  key: client-id
+            - name: BW_CLIENTSECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vaultwarden.credentialsSecret }}
+                  key: client-secret
+            - name: BW_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vaultwarden.credentialsSecret }}
+                  key: master-password
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            {{- toYaml .Values.vaultwarden.resources.cli | nindent 12 }}
+          volumeMounts:
+            - name: cli-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+        - name: push-bridge
+          image: {{ .Values.vaultwarden.bridgeImage | quote }}
+          command: [python, -B, /app/bridge.py]
+          env:
+            - name: ALLOWED_KEYS
+              value: {{ toJson $domains | quote }}
+            - name: ITEM_NAME_PREFIX
+              value: {{ .Values.vaultwarden.itemNamePrefix | quote }}
+            - name: ORGANIZATION_ID
+              value: {{ .Values.vaultwarden.organizationId | quote }}
+            - name: COLLECTION_IDS
+              value: {{ toJson .Values.vaultwarden.collectionIds | quote }}
+            - name: FOLDER_ID
+              value: {{ .Values.vaultwarden.folderId | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 30
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            {{- toYaml .Values.vaultwarden.resources.bridge | nindent 12 }}
+          volumeMounts:
+            - name: bridge-code
+              mountPath: /app
+              readOnly: true
+            - name: webhook-auth
+              mountPath: /auth
+              readOnly: true
+      volumes:
+        - name: bridge-code
+          configMap:
+            name: {{ $name }}
+        - name: webhook-auth
+          secret:
+            secretName: {{ $name }}-auth
+        - name: cli-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/component: vaultwarden-bridge
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: vaultwarden-bridge
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.vaultwarden.externalSecretsNamespace | quote }}
+          podSelector:
+            matchLabels:
+              {{- toYaml .Values.vaultwarden.externalSecretsPodSelector | nindent 14 }}
+      ports:
+        - port: 8080
+          protocol: TCP
+{{- end }}

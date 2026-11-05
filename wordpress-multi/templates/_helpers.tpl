@@ -14,3 +14,7 @@ helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | quote }}
 {{- end -}}
 {{- end -}}
 
+
+{{- define "wordpress-clones.vaultwardenName" -}}
+{{- printf "%s-wp-vaultwarden" .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

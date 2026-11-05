@@ -13,6 +13,10 @@
 {{- end -}}
 {{- if hasKey $seen $domain -}}{{- fail (printf "Duplicate domain: %s" $domain) -}}{{- end -}}
 {{- $_ := set $seen $domain true -}}
+{{- $adminEmail := required (printf "Site %s requires adminEmail" $domain) $site.adminEmail -}}
+{{- if not (regexMatch "^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$" $adminEmail) -}}
+  {{- fail (printf "Invalid adminEmail for %s" $domain) -}}
+{{- end -}}
 {{- $slug := trimSuffix ".cngei.it" $domain -}}
 {{- $name := include "wordpress-clones.name" $slug -}}
 {{- $secret := printf "%s-wordpress-secret" $slug -}}
@@ -30,6 +34,8 @@
 {{- if hasKey $seen (printf "user:%s" $dbUser) -}}{{- fail (printf "Duplicate database user: %s" $dbUser) -}}{{- end -}}
 {{- $_ := set $seen (printf "db:%s" $dbName) true -}}
 {{- $_ := set $seen (printf "user:%s" $dbUser) true -}}
+{{- include "wordpress-clones.siteSecrets" (dict "root" $root "site" $site "domain" $domain "name" $name "secret" $secret "slug" $slug "adminEmail" $adminEmail "dbName" $dbName "dbUser" $dbUser) -}}
+
 {{ printf "\n---\n" }}
 apiVersion: v1
 kind: PersistentVolumeClaim

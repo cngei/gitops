@@ -8,9 +8,11 @@ nodeSelector:
 
 sites:
   - domain: cn27.cngei.it
+    adminEmail: cn27-admin@example.com
     persistence:
       size: 2Gi
   - domain: roma.cngei.it
+    adminEmail: roma-admin@example.com
     persistence:
       size: 5Gi
 

@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/cngei/sezioni-wp
-  tag: "85a56f85791f66274c625f060b3ca8bc41a390b4"
+  tag: "37396c94ac2de4d0b9bc780f216d779aa3015e91"
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
@@ -56,5 +56,56 @@ cron:
     limits:
       memory: 64Mi
 
+externalSecrets:
+  enabled: true
+  apiVersion: external-secrets.io/v1
+  # Immutable orphaned targets keep generated credentials stable across upgrades.
+  keep: true
+  databaseHost: "" # Defaults to <mariadb.name>.<namespace>.svc.cluster.local:3306.
+  password:
+    length: 16
+    digits: 4
+    symbols: 0
+    noUpper: false
+    allowRepeat: true
+  extraEnv: {}
+  pushSecret:
+    enabled: false
+    apiVersion: external-secrets.io/v1alpha1
+    refreshInterval: 1h
+    # Empty name uses the namespace-local store created by vaultwarden.enabled.
+    secretStoreRef:
+      name: ""
+      kind: SecretStore
+
+vaultwarden:
+  enabled: false
+  server: https://password.cngei.it
+  # Bootstrap outside Git: client-id, client-secret, master-password.
+  credentialsSecret: wordpress-vaultwarden-credentials
+  cliImage: ghcr.io/charlesthomas/bitwarden-cli:2026.10.1
+  bridgeImage: python:3.13-slim-bookworm
+  itemNamePrefix: "Kubernetes WordPress: "
+  organizationId: "39707e44-2513-4bc9-9209-e1f84e6e285b"
+  collectionIds: ["21d3ccad-4f23-4ccb-b855-180d049a4f2f"]
+  folderId: ""
+  externalSecretsNamespace: external-secrets
+  externalSecretsPodSelector:
+    app.kubernetes.io/name: external-secrets
+  resources:
+    cli:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    bridge:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+
 sites:
-    - domain: aosta.cngei.it
+  - domain: aosta.cngei.it
+    adminEmail: paolo.campanelli@cngei.it
