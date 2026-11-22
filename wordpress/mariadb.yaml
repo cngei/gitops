@@ -19,3 +19,5 @@ spec:
   metrics:
     enabled: false
   replicas: 1
+  nodeSelector:
+    node-role.kubernetes.io/worker: wordpress
