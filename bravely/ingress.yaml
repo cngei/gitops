@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bravely-ingress
+  namespace: bravely
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`bravely.cngei.it`)
+      services:
+        - kind: Service
+          name: bravely
+          port: 3000
+  tls:
+    secretName: bravely-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bravely-cert
+  namespace: bravely
+spec:
+  secretName: bravely-tls
+  dnsNames:
+    - bravely.cngei.it
+  issuerRef:
+    name: le-cert-issuer
+    kind: ClusterIssuer

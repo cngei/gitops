@@ -122,6 +122,12 @@ spec:
         superuser: false
         passwordSecret:
           name: pg-cluster-moodle-credentials
+      - name: bravely
+        ensure: present
+        login: true
+        superuser: false
+        passwordSecret:
+          name: pg-cluster-bravely-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database

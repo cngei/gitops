@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bravely
+  namespace: bravely
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bravely
+  template:
+    metadata:
+      labels:
+        app: bravely
+    spec:
+      initContainers:
+        - name: migrate
+          image: ghcr.io/cngei/bravely:c6460eb4da0c79990f6b9bd775d652ff184a661b
+          command: ["npm", "run", "db:migrate"]
+          env:
+            - name: DATABASE_URL
+              value: postgresql://bravely@pg-cluster-rw.db.svc.cluster.local:5432/bravely
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-bravely-credentials
+                  key: password
+      containers:
+        - name: bravely
+          image: ghcr.io/cngei/bravely:c6460eb4da0c79990f6b9bd775d652ff184a661b
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: http
+          env:
+            - name: DATABASE_URL
+              value: postgresql://bravely@pg-cluster-rw.db.svc.cluster.local:5432/bravely
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-bravely-credentials
+                  key: password
+            - name: APP_URL
+              value: https://bravely.cngei.it
+            - name: BACKEND_URL
+              value: https://api.cngei.it
+            - name: KEYCLOAK_ISSUER
+              value: https://auth.cngei.it/auth/realms/cngei
+            - name: KEYCLOAK_CLIENT_ID
+              value: bravely
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bravely-secrets
+                  key: SESSION_SECRET
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bravely-secrets
+                  key: KEYCLOAK_CLIENT_SECRET
+                  optional: true
