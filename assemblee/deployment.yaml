@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: assemblee
-          image: ghcr.io/cngei/assemblee-cngei:2aae312526433ce09e07d0d5fa0c96fa4183c908
+          image: ghcr.io/cngei/assemblee-cngei:3cfd32aeabae988ba5c5cb03b0ee5ad5782b3e54
           ports:
             - containerPort: 8080
           env:
